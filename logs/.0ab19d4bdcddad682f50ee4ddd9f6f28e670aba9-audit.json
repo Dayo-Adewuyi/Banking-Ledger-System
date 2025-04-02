@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/enyata/ledger/logs/.0ab19d4bdcddad682f50ee4ddd9f6f28e670aba9-audit.json",
+    "files": [
+        {
+            "date": 1743586689656,
+            "name": "/Users/enyata/ledger/logs/combined-2025-04-02.log",
+            "hash": "1dc873c8f86d95195279d41ca3d0b8f0d3b544fbf714d85b2127f3c1910ed41f"
+        }
+    ],
+    "hashType": "sha256"
+}

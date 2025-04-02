@@ -1,0 +1,19 @@
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (including dev dependencies)
+RUN npm install
+
+# Set node environment to development
+ENV NODE_ENV=development
+
+# Expose the API port
+EXPOSE 3000
+
+# Use nodemon for development (restart on file changes)
+CMD ["npm", "run", "dev"]
