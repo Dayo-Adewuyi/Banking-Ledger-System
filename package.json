@@ -16,7 +16,6 @@
     "test:watch": "jest --watch",
     "test:e2e": "jest --config jest.e2e.config.js",
     "audit": "npm audit --audit-level=high",
-    "prepare": "husky install",
     "docker:build": "docker build -t banking-ledger-api .",
     "docker:run": "docker run -p 3000:3000 banking-ledger-api"
   },
