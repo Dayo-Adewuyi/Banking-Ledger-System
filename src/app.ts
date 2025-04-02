@@ -11,7 +11,13 @@ import hpp from 'hpp';
 
 import { appConfig, auth, getFullApiPrefix } from './config';
 
-import authMiddleware from './middlewares/auth.middleware';
+import { 
+  errorMiddleware, 
+  securityMiddleware,
+  loggingMiddleware,
+  authMiddleware,
+  performanceMiddleware
+} from './middlewares';
 
 
 
@@ -31,6 +37,8 @@ class App {
    * Configure application middleware
    */
   private configureMiddleware(): void {
+    this.app.use(performanceMiddleware.compressResponses());
+
     this.app.use(helmet());
     this.app.use(cors({
       origin: appConfig.corsOrigins,
@@ -39,7 +47,7 @@ class App {
       credentials: true
     }));
     
-    // this.app.use(securityMiddleware.addRequestId());
+    this.app.use(securityMiddleware.addRequestId());
     
     this.app.use(express.json({ limit: '10kb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -50,7 +58,7 @@ class App {
     if (appConfig.env === 'development') {
       this.app.use(morgan('dev'));
     } else {
-    //   this.app.use(loggingMiddleware.requestLogger());
+      this.app.use(loggingMiddleware.requestLogger());
     }
     
     this.app.use(compression());
@@ -70,19 +78,19 @@ class App {
     
     this.app.use(passport.initialize());
    
-    // passport.use(new JwtStrategy(auth.jwtOptions, authMiddleware.verifyCallback));
+    passport.use(new JwtStrategy(auth.jwtOptions, authMiddleware.verifyCallback));
     
-    // this.app.use(securityMiddleware.detectSuspiciousActivity());
+    this.app.use(securityMiddleware.detectSuspiciousActivity());
     
     if (appConfig.env === 'production') {
-    //   this.app.use(securityMiddleware.generalRateLimiter);
+      this.app.use(securityMiddleware.generalRateLimiter);
       
-    //   this.app.use(securityMiddleware.forceHttps());
+      this.app.use(securityMiddleware.forceHttps());
     }
     
-    // this.app.use(loggingMiddleware.slowRequestLogger(1000)); 
+    this.app.use(loggingMiddleware.slowRequestLogger(1000)); 
     
-    // this.app.use(loggingMiddleware.auditLogger());
+    this.app.use(loggingMiddleware.auditLogger());
   }
   
   /**
@@ -92,23 +100,50 @@ class App {
     const apiPrefix = getFullApiPrefix();
     
     this.app.get('/health', (req: Request, res: Response) => {
-      res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+      res.status(200).json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memoryUsage: process.memoryUsage()
+      });
     });
     
+    
+    
+    this.app.get('/management/cache-stats', (req: Request, res: Response) => {
+      const cacheInstance = performanceMiddleware.getCache();
+      if (cacheInstance) {
+        res.json({
+          keys: cacheInstance.keys().length,
+          stats: cacheInstance.getStats(),
+          memoryUsage: process.memoryUsage()
+        });
+      } else {
+        res.json({
+          error: 'Cache instance not available',
+          memoryUsage: process.memoryUsage()
+        });
+      }
+    });
    
+    this.app.use(`${apiPrefix}/reference`, (req: Request, res: Response, next: NextFunction) => {
+      performanceMiddleware.cacheResponse(
+        performanceMiddleware.CACHE_TTLS.REFERENCE_DATA, 'ref'
+      )(req, res, next);
+    });
     
     // this.app.use(apiPrefix, routes);
     
-    // this.app.all('*', errorMiddleware.notFoundHandler);
+    this.app.all('*', errorMiddleware.notFoundHandler);
   }
   
   /**
    * Configure error handling
    */
   private configureErrorHandling(): void {
-    // this.app.use(errorMiddleware.errorHandler);
+    this.app.use(errorMiddleware.errorHandler);
     
-    // this.app.use(errorMiddleware.handleUncaughtException);
+    this.app.use(errorMiddleware.handleUncaughtException);
     
     process.on('unhandledRejection', (reason: Error) => {
       logger.error('UNHANDLED REJECTION! 💥 Shutting down...', {

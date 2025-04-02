@@ -125,9 +125,29 @@ export const isResourceOwner = (paramIdField: string = 'userId') => {
   };
 };
 
+export const verifyCallback = async (jwtPayload: JwtUserPayload, done: any) => {
+  try {
+  
+    if (!jwtPayload.id || !jwtPayload.role) {
+      return done(null, false);
+    }
+    
+    return done(null, {
+      id: jwtPayload.id,
+      email: jwtPayload.email,
+      role: jwtPayload.role,
+      permissions: jwtPayload.permissions || []
+    });
+  } catch (error) {
+    logger.error('JWT verification error', { error: (error as Error).message });
+    return done(error, false);
+  }
+};
+
 export default {
   authenticateJwt,
   hasRole,
   hasPermission,
-  isResourceOwner
+  isResourceOwner,
+  verifyCallback
 };
