@@ -129,7 +129,15 @@ export const requestLogger = (req: AuthenticatedRequest, res: Response, next: Ne
     const duration = Date.now() - start;
     const message = `${req.method} ${req.originalUrl || req.url} ${res.statusCode} ${duration}ms`;
     
-    const meta = {
+    const meta: {
+      ip: string | undefined;
+      method: string;
+      url: string;
+      statusCode: number;
+      userAgent: string;
+      duration: number;
+      userId?: string;
+    } = {
       ip: req.ip || req.socket.remoteAddress,
       method: req.method,
       url: req.originalUrl || req.url,

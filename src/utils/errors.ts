@@ -201,7 +201,15 @@ export const errorHandler = (
     });
   }
   
-  const response = {
+  const response: {
+    success: boolean;
+    error: {
+      code: string;
+      message: string;
+      details: any;
+      stack?: string;
+    };
+  } = {
     success: false,
     error: {
       code: error.code,
@@ -211,7 +219,7 @@ export const errorHandler = (
   };
   
   if (isDevelopment() && !error.isOperational) {
-    response.error['stack'] = error.stack;
+    response.error.stack = error.stack;
   }
   
   res.status(error.statusCode).json(response);
