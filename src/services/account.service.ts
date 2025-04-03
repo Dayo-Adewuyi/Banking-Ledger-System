@@ -238,11 +238,13 @@ export class AccountService {
   ): AccountResponseDTO {
     return {
       id: account._id.toString(),
+      userId: account.userId.toString() || '',
       accountNumber: account.accountNumber,
       accountType: account.accountType,
       currency: account.currency,
       balance: balance.balance.toString(),
       isActive: account.isActive,
+      metadata: account.metadata,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt
     };

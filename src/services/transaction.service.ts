@@ -1356,7 +1356,8 @@ import { logger } from '../utils/logger';
       ...this.mapTransactionToDTO(transaction),
       entries,
       metadata,
-      failureReason: transaction.failureReason
+      failureReason: transaction.failureReason,
+      userId: transaction.userId.toString()
     };
   }
 }

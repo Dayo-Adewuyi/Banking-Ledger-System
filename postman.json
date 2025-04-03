@@ -1,0 +1,1204 @@
+{
+    "info": {
+      "name": "Banking Ledger API - Auth Routes",
+      "description": "Collection of authentication endpoints for the Banking Ledger API, including user registration, login, token refresh, password management, and account verification.",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Register User",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongP@ssw0rd123\",\n  \"confirmPassword\": \"StrongP@ssw0rd123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"notifications\": {\n    \"email\": true,\n    \"sms\": false,\n    \"marketing\": false\n  }\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/register",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "register"]
+          },
+          "description": "Register a new user with the system. The password must meet the security requirements (min length 12, at least one uppercase letter, one lowercase letter, one number, and one special character)."
+        },
+        "response": [
+          {
+            "name": "Password Reset Successful",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"NewStrongP@ssw0rd123\",\n  \"confirmPassword\": \"NewStrongP@ssw0rd123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Password has been reset successfully. You can now log in with your new password.\"\n}",
+            "cookie": []
+          },
+          {
+            "name": "Invalid or Expired Token",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"invalid-or-expired-token\",\n  \"newPassword\": \"NewStrongP@ssw0rd123\",\n  \"confirmPassword\": \"NewStrongP@ssw0rd123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Token is invalid or has expired\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Passwords Don't Match",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"valid-reset-token\",\n  \"newPassword\": \"NewStrongP@ssw0rd123\",\n  \"confirmPassword\": \"DifferentPassword456\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"New password and confirmation do not match\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Successful Registration",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongP@ssw0rd123\",\n  \"confirmPassword\": \"StrongP@ssw0rd123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"notifications\": {\n    \"email\": true,\n    \"sms\": false,\n    \"marketing\": false\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/register",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "register"]
+              }
+            },
+            "status": "Created",
+            "code": 201,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"User registered successfully. Please check your email for verification instructions.\",\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"email\": \"user@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"fullName\": \"John Doe\",\n    \"role\": \"user\",\n    \"status\": \"pending_verification\",\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-01T10:30:00.000Z\",\n    \"token\": \"verification-token-string\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Email Already Exists",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"existing@example.com\",\n  \"password\": \"StrongP@ssw0rd123\",\n  \"confirmPassword\": \"StrongP@ssw0rd123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/register",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "register"]
+              }
+            },
+            "status": "Conflict",
+            "code": 409,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_CONFLICT\",\n    \"message\": \"User with this email already exists\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Password Validation Error",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"weak\",\n  \"confirmPassword\": \"weak\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/register",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "register"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Password must be at least 12 characters long\",\n    \"details\": [\n      {\n        \"field\": \"password\",\n        \"message\": \"Password must be at least 12 characters long\",\n        \"value\": \"weak\"\n      }\n    ]\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Login",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongP@ssw0rd123\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/login",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "login"]
+          },
+          "description": "Authenticate a user and retrieve access and refresh tokens. The system has rate limiting to prevent brute force attacks (5 attempts per 15 minutes)."
+        },
+        "response": [
+          {
+            "name": "Successful Login",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongP@ssw0rd123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/login",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "login"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Set-Cookie",
+                "value": "refreshToken=refresh-token-value; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/api/v1/auth/refresh"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"60d21b4667d0d8992e610c85\",\n      \"email\": \"user@example.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"fullName\": \"John Doe\",\n      \"role\": \"user\",\n      \"status\": \"active\",\n      \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n      \"updatedAt\": \"2023-08-01T10:30:00.000Z\",\n      \"lastLogin\": \"2023-08-01T15:45:00.000Z\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"tokenExpires\": 1690900800\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Invalid Credentials",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"WrongPassword123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/login",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "login"]
+              }
+            },
+            "status": "Unauthorized",
+            "code": 401,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Invalid credentials\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Account Locked",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"locked@example.com\",\n  \"password\": \"AnyPassword123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/login",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "login"]
+              }
+            },
+            "status": "Unauthorized",
+            "code": 401,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Account is temporarily locked. Please try again in 30 minutes.\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Rate Limit Exceeded",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"WrongPassword123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/login",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "login"]
+              }
+            },
+            "status": "Too Many Requests",
+            "code": 429,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-RateLimit-Limit",
+                "value": "5"
+              },
+              {
+                "key": "X-RateLimit-Remaining",
+                "value": "0"
+              },
+              {
+                "key": "X-RateLimit-Reset",
+                "value": "1690902300"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_RATE_LIMIT\",\n    \"message\": \"Too many login attempts, please try again later\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Refresh Token",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/refresh",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "refresh"]
+          },
+          "description": "Request a new access token using a valid refresh token. The refresh token can be provided either in the request body or as an HTTP-only cookie (if USE_SECURE_COOKIES=true in environment)."
+        },
+        "response": [
+          {
+            "name": "Successful Token Refresh",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/refresh",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "refresh"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Set-Cookie",
+                "value": "refreshToken=new-refresh-token-value; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/api/v1/auth/refresh"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Token refreshed successfully\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"60d21b4667d0d8992e610c85\",\n      \"email\": \"user@example.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"fullName\": \"John Doe\",\n      \"role\": \"user\",\n      \"status\": \"active\",\n      \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n      \"updatedAt\": \"2023-08-01T10:30:00.000Z\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"tokenExpires\": 1690903800\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Invalid Refresh Token",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"refreshToken\": \"invalid-token\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/refresh",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "refresh"]
+              }
+            },
+            "status": "Unauthorized",
+            "code": 401,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Set-Cookie",
+                "value": "refreshToken=; Path=/api/v1/auth/refresh; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Invalid or expired refresh token\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Logout",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{accessToken}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/logout",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "logout"]
+          },
+          "description": "Log out the currently authenticated user by invalidating their refresh token. If using secure cookies, this will also clear the refresh token cookie."
+        },
+        "response": [
+          {
+            "name": "Successful Logout",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/logout",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "logout"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Set-Cookie",
+                "value": "refreshToken=; Path=/api/v1/auth/refresh; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Logged out successfully\"\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Get Current User",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{accessToken}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/me",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "me"]
+          },
+          "description": "Get the profile information of the currently authenticated user."
+        },
+        "response": [
+          {
+            "name": "Successful Response",
+            "originalRequest": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/me",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "me"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"email\": \"user@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"fullName\": \"John Doe\",\n    \"role\": \"user\",\n    \"status\": \"active\",\n    \"contact\": {\n      \"phone\": \"+1234567890\",\n      \"address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"CA\",\n        \"zipCode\": \"12345\",\n        \"country\": \"USA\"\n      }\n    },\n    \"notifications\": {\n      \"email\": true,\n      \"sms\": false,\n      \"push\": true,\n      \"marketing\": false\n    },\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-01T15:45:00.000Z\",\n    \"lastLogin\": \"2023-08-01T15:45:00.000Z\",\n    \"metadata\": {}\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Unauthorized",
+            "originalRequest": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer invalid-token"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/me",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "me"]
+              }
+            },
+            "status": "Unauthorized",
+            "code": 401,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Authentication required\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Verify Email",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"token\": \"verification-token-from-email\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/verify-email",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "verify-email"]
+          },
+          "description": "Verify a user's email address using the token sent during registration. This changes the user's status from 'pending_verification' to 'active'."
+        },
+        "response": [
+          {
+            "name": "Email Verified Successfully",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"verification-token-from-email\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/verify-email",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "verify-email"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Email verified successfully. You can now log in to your account.\"\n}",
+            "cookie": []
+          },
+          {
+            "name": "Invalid or Expired Verification Token",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"invalid-or-expired-verification-token\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/verify-email",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "verify-email"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Invalid or expired verification token\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Resend Verification Email",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"user@example.com\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/resend-verification",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "resend-verification"]
+          },
+          "description": "Request a new verification email if the original one was lost or expired. For security reasons, this endpoint always returns a success message even if the email doesn't exist or is already verified."
+        },
+        "response": [
+          {
+            "name": "Request Submitted",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/resend-verification",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "resend-verification"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"If the email exists and requires verification, a new verification email has been sent.\"\n}",
+            "cookie": []
+          },
+          {
+            "name": "Rate Limit Exceeded",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/resend-verification",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "resend-verification"]
+              }
+            },
+            "status": "Too Many Requests",
+            "code": 429,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-RateLimit-Limit",
+                "value": "10"
+              },
+              {
+                "key": "X-RateLimit-Remaining",
+                "value": "0"
+              },
+              {
+                "key": "X-RateLimit-Reset",
+                "value": "1690902300"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_RATE_LIMIT\",\n    \"message\": \"Too many sensitive operations, please try again later\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Check Auth Status",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{accessToken}}",
+              "description": "Optional - if not provided, returns unauthenticated status"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/status",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "status"]
+          },
+          "description": "Quick endpoint to check if the current user is authenticated. Can be used for initial app loading state."
+        },
+        "response": [
+          {
+            "name": "Authenticated Status",
+            "originalRequest": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/status",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "status"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"authenticated\": true,\n  \"user\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"email\": \"user@example.com\",\n    \"role\": \"user\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Unauthenticated Status",
+            "originalRequest": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/status",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "status"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"authenticated\": false\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Request Password Reset",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"user@example.com\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/password-reset-request",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "password-reset-request"]
+          },
+          "description": "Request a password reset token. For security reasons, this endpoint always returns a success message even if the email doesn't exist. Rate limited to prevent abuse."
+        },
+        "response": [
+          {
+            "name": "Request Submitted",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset-request",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset-request"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"If the email exists in our system, a password reset link has been sent.\"\n}",
+            "cookie": []
+          },
+          {
+            "name": "Rate Limit Exceeded",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset-request",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset-request"]
+              }
+            },
+            "status": "Too Many Requests",
+            "code": 429,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-RateLimit-Limit",
+                "value": "10"
+              },
+              {
+                "key": "X-RateLimit-Remaining",
+                "value": "0"
+              },
+              {
+                "key": "X-RateLimit-Reset",
+                "value": "1690902300"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_RATE_LIMIT\",\n    \"message\": \"Too many sensitive operations, please try again later\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Change Password",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{accessToken}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"currentPassword\": \"StrongP@ssw0rd123\",\n  \"newPassword\": \"NewerP@ssw0rd456\",\n  \"confirmPassword\": \"NewerP@ssw0rd456\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/change-password",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "change-password"]
+          },
+          "description": "Change password for an authenticated user. Requires the user to provide their current password for verification. The new password must meet the security requirements and cannot be one of the user's previous passwords."
+        },
+        "response": [
+          {
+            "name": "Password Changed Successfully",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"currentPassword\": \"StrongP@ssw0rd123\",\n  \"newPassword\": \"NewerP@ssw0rd456\",\n  \"confirmPassword\": \"NewerP@ssw0rd456\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/change-password",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "change-password"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Password changed successfully\"\n}",
+            "cookie": []
+          },
+          {
+            "name": "Current Password Incorrect",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"currentPassword\": \"WrongCurrentPassword\",\n  \"newPassword\": \"NewerP@ssw0rd456\",\n  \"confirmPassword\": \"NewerP@ssw0rd456\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/change-password",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "change-password"]
+              }
+            },
+            "status": "Unauthorized",
+            "code": 401,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Current password is incorrect\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "Password Previously Used",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"currentPassword\": \"StrongP@ssw0rd123\",\n  \"newPassword\": \"PreviouslyUsedP@ss789\",\n  \"confirmPassword\": \"PreviouslyUsedP@ss789\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/change-password",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "change-password"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Cannot reuse any of your last 5 passwords\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      },
+      {
+        "name": "Reset Password",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"NewStrongP@ssw0rd123\",\n  \"confirmPassword\": \"NewStrongP@ssw0rd123\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "v1", "auth", "password-reset"]
+          },
+          "description": "Reset password using a valid reset token. The token is sent to the user's email address. The new password must meet the security requirements and cannot be one of the user's previous passwords."
+        },
+        "response": [
+          {
+            "name": "Password Reset Successfully",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"NewStrongP@ssw0rd123\",\n  \"confirmPassword\": \"NewStrongP@ssw0rd123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset"]
+              }
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": true,\n  \"message\": \"Password reset successfully. You can now log in with your new password.\"\n}",
+            "cookie": []
+          },
+          {
+            "name": "Invalid or Expired Reset Token",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"invalid-or-expired-reset-token\",\n  \"newPassword\": \"NewStrongP@ssw0rd123\",\n  \"confirmPassword\": \"NewStrongP@ssw0rd123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Invalid or expired reset token\"\n  }\n}",
+            "cookie": []
+          },
+          {
+            "name": "New Password Reused",
+            "originalRequest": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"PreviouslyUsedP@ss789\",\n  \"confirmPassword\": \"PreviouslyUsedP@ss789\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/auth/password-reset",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "auth", "password-reset"]
+              }
+            },
+            "status": "Bad Request",
+            "code": 400,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Cannot reuse any of your last 5 passwords\"\n  }\n}",
+            "cookie": []
+          }
+        ]
+      }
+    ]
+  }
