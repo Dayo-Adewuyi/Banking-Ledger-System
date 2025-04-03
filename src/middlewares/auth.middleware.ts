@@ -1,5 +1,4 @@
-
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/auth';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors';
@@ -9,7 +8,7 @@ import { logger } from '../utils/logger';
 /**
  * Middleware to verify JWT token and authenticate user
  */
-export const authenticateJwt = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const authenticateJwt = (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -19,12 +18,16 @@ export const authenticateJwt = (req: AuthenticatedRequest, res: Response, next: 
     
     const token = authHeader.split(' ')[1];
     
-    const decoded = jwt.verify(token, jwtConfig.secret, {
-      issuer: jwtConfig.issuer,
-      audience: jwtConfig.audience
-    }) as JwtUserPayload;
+    const decoded = jwt.verify(
+      token, 
+      Buffer.from(jwtConfig.secret),
+      {
+        issuer: jwtConfig.issuer,
+        audience: jwtConfig.audience
+      }
+    ) as JwtUserPayload;
     
-    req.user = {
+    (req as AuthenticatedRequest).user = {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
@@ -50,13 +53,14 @@ export const authenticateJwt = (req: AuthenticatedRequest, res: Response, next: 
  * @param roles Array of roles that are allowed
  */
 export const hasRole = (roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.user) {
       return next(new UnauthorizedError('User not authenticated'));
     }
     
-    if (!roles.includes(req.user.role)) {
-      logger.warn(`Access denied: User ${req.user.id} with role ${req.user.role} attempted to access restricted resource`, {
+    if (!roles.includes(authReq.user.role)) {
+      logger.warn(`Access denied: User ${authReq.user.id} with role ${authReq.user.role} attempted to access restricted resource`, {
         path: req.path,
         method: req.method,
         roles: roles
@@ -74,17 +78,18 @@ export const hasRole = (roles: string[]) => {
  * @param requiredPermissions Array of permissions that are required
  */
 export const hasPermission = (requiredPermissions: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.user) {
       return next(new UnauthorizedError('User not authenticated'));
     }
     
     const hasAllPermissions = requiredPermissions.every(permission => 
-      req.user!.permissions.includes(permission)
+      authReq.user!.permissions.includes(permission)
     );
     
     if (!hasAllPermissions) {
-      logger.warn(`Permission denied: User ${req.user.id} with permissions [${req.user.permissions.join(', ')}] attempted to access resource requiring [${requiredPermissions.join(', ')}]`, {
+      logger.warn(`Permission denied: User ${authReq.user.id} with permissions [${authReq.user.permissions.join(', ')}] attempted to access resource requiring [${requiredPermissions.join(', ')}]`, {
         path: req.path,
         method: req.method
       });
@@ -101,19 +106,20 @@ export const hasPermission = (requiredPermissions: string[]) => {
  * @param paramIdField The request parameter containing the user ID to check against
  */
 export const isResourceOwner = (paramIdField: string = 'userId') => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.user) {
       return next(new UnauthorizedError('User not authenticated'));
     }
     
     const resourceUserId = req.params[paramIdField];
     
-    if (req.user.role === 'admin') {
+    if (authReq.user.role === 'admin') {
       return next();
     }
     
-    if (resourceUserId !== req.user.id) {
-      logger.warn(`Ownership check failed: User ${req.user.id} attempted to access resource owned by ${resourceUserId}`, {
+    if (resourceUserId !== authReq.user.id) {
+      logger.warn(`Ownership check failed: User ${authReq.user.id} attempted to access resource owned by ${resourceUserId}`, {
         path: req.path,
         method: req.method
       });
@@ -127,7 +133,6 @@ export const isResourceOwner = (paramIdField: string = 'userId') => {
 
 export const verifyCallback = async (jwtPayload: JwtUserPayload, done: any) => {
   try {
-  
     if (!jwtPayload.id || !jwtPayload.role) {
       return done(null, false);
     }

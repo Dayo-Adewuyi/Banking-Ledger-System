@@ -1,5 +1,4 @@
-// src/middleware/performance.middleware.ts
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import compression from 'compression';
 import { logger } from '../utils/logger';
 import NodeCache from 'node-cache';
@@ -47,8 +46,8 @@ export const getCache = () => {
  * @param duration Cache duration in seconds (defaults to 5 minutes)
  * @param keyPrefix Optional prefix for cache key
  */
-export const cacheResponse = (duration: number = 300, keyPrefix: string = '') => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const cacheResponse = (duration: number = 300, keyPrefix: string = ''): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (req.method !== 'GET') {
       return next();
     }
@@ -64,7 +63,8 @@ export const cacheResponse = (duration: number = 300, keyPrefix: string = '') =>
     if (cachedBody) {
       res.setHeader('X-Cache', 'HIT');
       res.setHeader('Content-Type', 'application/json');
-      return res.send(cachedBody);
+      res.send(cachedBody);
+      return; // Return void instead of Response
     }
     
     const originalSend = res.send;
@@ -88,7 +88,6 @@ export const cacheResponse = (duration: number = 300, keyPrefix: string = '') =>
     next();
   };
 };
-
 /**
  * Flush cache by pattern
  * @param pattern Pattern to match cache keys

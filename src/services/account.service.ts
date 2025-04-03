@@ -3,8 +3,6 @@ import Account from '../models/account.model';
 import AccountBalance from '../models/accountBalance.model';
 import { 
   IAccount, 
-  AccountType, 
-  CurrencyCode,
   IAccountCreate,
   IAccountUpdate,
   AccountResponseDTO 
@@ -21,7 +19,6 @@ export class AccountService {
    * @returns Created account with balance details
    */
   async createAccount(accountData: IAccountCreate): Promise<AccountResponseDTO> {
-    // Start a MongoDB session for transaction
     const session = await mongoose.startSession();
     session.startTransaction();
     
@@ -177,7 +174,6 @@ export class AccountService {
       throw new NotFoundError('Account not found');
     }
     
-    // Update account fields
     if (updateData.accountType !== undefined) {
       account.accountType = updateData.accountType;
     }
@@ -187,7 +183,6 @@ export class AccountService {
     }
     
     if (updateData.metadata) {
-      // Merge metadata
       for (const [key, value] of Object.entries(updateData.metadata)) {
         account.metadata.set(key, value);
       }
@@ -195,7 +190,6 @@ export class AccountService {
     
     await account.save();
     
-    // Get associated balance
     const accountBalance = await AccountBalance.findOne({ accountId: account._id });
     
     if (!accountBalance) {

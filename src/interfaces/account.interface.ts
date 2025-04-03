@@ -56,9 +56,11 @@ export interface IAccountUpdate {
 
 export interface AccountResponseDTO {
   id: string;
+  userId: string;
   accountNumber: string;
   accountType: AccountType;
   currency: CurrencyCode;
+  metadata:any
   balance: string;
   isActive: boolean;
   createdAt: Date;

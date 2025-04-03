@@ -42,6 +42,7 @@ export interface ITransactionEntry {
 }
 
 export interface ITransaction extends Document {
+  _id: string;
   transactionId: string;
   transactionType: TransactionType;
   userId: Types.ObjectId;
@@ -143,6 +144,7 @@ export interface TransactionDetailedResponseDTO extends TransactionResponseDTO {
   }[];
   metadata: Record<string, any>;
   failureReason?: string;
+  userId: string;
 }
 
 export interface TransactionQueryParams {

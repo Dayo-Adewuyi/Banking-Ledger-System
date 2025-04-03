@@ -48,6 +48,7 @@ export interface IUserNotifications {
 }
 
 export interface IUser extends Document {
+  _id: string;
   email: string;
   password: string;
   firstName: string;
