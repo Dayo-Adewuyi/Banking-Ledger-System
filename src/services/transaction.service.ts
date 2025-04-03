@@ -1,7 +1,7 @@
-import mongoose, {PipelineStage} from 'mongoose';
-import Transaction from '../models/transaction.model';
-import Account from '../models/account.model';
-import AccountBalance from '../models/accountBalance.model';
+import mongoose, { PipelineStage } from "mongoose";
+import Transaction from "../models/transaction.model";
+import Account from "../models/account.model";
+import AccountBalance from "../models/accountBalance.model";
 import {
   ITransaction,
   TransactionType,
@@ -15,29 +15,28 @@ import {
   ReversalTransactionDTO,
   TransactionResponseDTO,
   TransactionDetailedResponseDTO,
-  TransactionQueryParams
-} from '../interfaces/transaction.interface';
-import { CurrencyCode } from '../interfaces/account.interface';
+  TransactionQueryParams,
+} from "../interfaces/transaction.interface";
+import { CurrencyCode } from "../interfaces/account.interface";
 import {
   BadRequestError,
   NotFoundError,
   InsufficientFundsError,
   DatabaseError,
-  TransactionError
-} from '../utils/errors';
-import { generateTransactionId } from '../utils/crypto';
-import { Decimal } from 'decimal.js';
-import { logger } from '../utils/logger';
+  TransactionError,
+} from "../utils/errors";
+import { generateTransactionId } from "../utils/crypto";
+import { Decimal } from "decimal.js";
+import { logger } from "../utils/logger";
 
 /**
  * Service for handling all transaction-related operations with
  * optimized performance and strict data integrity
  */
- class TransactionService {
+class TransactionService {
   private readonly TRANSACTION_CACHE_TTL = 300;
 
   private systemAccounts: Record<string, string> = {};
-
 
   /**
    * Get or create a system account for a specific purpose
@@ -45,60 +44,66 @@ import { logger } from '../utils/logger';
    * @param currency The currency for the system account
    * @returns System account ID
    */
-  private async getSystemAccount(accountType: string, currency: CurrencyCode): Promise<string> {
+  private async getSystemAccount(
+    accountType: string,
+    currency: CurrencyCode
+  ): Promise<string> {
+    let systemAccountId: string;
     const cacheKey = `${accountType}_${currency}`;
-    
+
     if (this.systemAccounts[cacheKey]) {
       return this.systemAccounts[cacheKey];
     }
-    
+
     const systemAccount = await Account.findOne({
-      accountType: 'SYSTEM',
+      accountType: "SYSTEM",
       currency,
-      'metadata.purpose': accountType
+      "metadata.purpose": accountType,
     });
-    
+
     if (systemAccount) {
       this.systemAccounts[cacheKey] = systemAccount._id.toString();
-      return systemAccount._id.toString();
+      systemAccountId = systemAccount._id.toString();
+    } else {
+      const systemUserId = await this.getSystemUserId();
+
+      const newSystemAccount = new Account({
+        userId: systemUserId,
+        accountNumber: generateTransactionId("SYS"),
+        accountType: "SYSTEM",
+        currency,
+        isActive: true,
+        metadata: new Map([
+          ["purpose", accountType],
+          ["description", `System ${accountType} Account for ${currency}`],
+          ["createdAt", new Date().toISOString()],
+        ]),
+      });
+
+      await newSystemAccount.save();
+
+      const systemBalance = new AccountBalance({
+        accountId: newSystemAccount._id,
+        currency,
+        balance: "0",
+        lastUpdated: new Date(),
+      });
+
+      await systemBalance.save();
+
+      this.systemAccounts[cacheKey] = newSystemAccount._id.toString();
+
+      systemAccountId = newSystemAccount._id.toString();
     }
-    
-    const systemUserId = await this.getSystemUserId();
-    
-    const newSystemAccount = new Account({
-      userId: systemUserId,
-      accountNumber: generateTransactionId('SYS'),
-      accountType: 'SYSTEM',
-      currency,
-      isActive: true,
-      metadata: new Map([
-        ['purpose', accountType],
-        ['description', `System ${accountType} Account for ${currency}`],
-        ['createdAt', new Date().toISOString()]
-      ])
-    });
-    
-    await newSystemAccount.save();
-    
-    const systemBalance = new AccountBalance({
-      accountId: newSystemAccount._id,
-      currency,
-      balance: '0',
-      lastUpdated: new Date()
-    });
-    
-    await systemBalance.save();
-    
-    this.systemAccounts[cacheKey] = newSystemAccount._id.toString();
-    return newSystemAccount._id.toString();
+
+    return systemAccountId;
   }
-  
+
   /**
    * Get system user ID for system accounts
    * @returns System user ID
    */
   private async getSystemUserId(): Promise<string> {
-
     return "000000000000000000000001";
   }
 
@@ -107,18 +112,20 @@ import { logger } from '../utils/logger';
    * @param depositData Deposit transaction data
    * @returns Created transaction
    */
-  async createDeposit(depositData: DepositTransactionDTO): Promise<TransactionResponseDTO> {
+  async createDeposit(
+    depositData: DepositTransactionDTO
+  ): Promise<TransactionResponseDTO> {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      const account = await Account.findOne({ 
+      const account = await Account.findOne({
         accountNumber: depositData.accountNumber,
-        isActive: true 
+        isActive: true,
       }).session(session);
 
       if (!account) {
-        throw new NotFoundError('Account not found or inactive');
+        throw new NotFoundError("Account not found or inactive");
       }
 
       if (account.currency !== depositData.currency) {
@@ -127,28 +134,31 @@ import { logger } from '../utils/logger';
         );
       }
 
-      const accountBalance = await AccountBalance.findOne({ 
-        accountId: account._id 
+      const accountBalance = await AccountBalance.findOne({
+        accountId: account._id,
       }).session(session);
 
       if (!accountBalance) {
-        throw new NotFoundError('Account balance not found');
+        throw new NotFoundError("Account balance not found");
       }
 
-      const transactionId = generateTransactionId('DEP');
-      const depositsAccountId = await this.getSystemAccount('DEPOSITS', depositData.currency);
+      const transactionId = generateTransactionId("DEP");
+      const depositsAccountId = await this.getSystemAccount(
+        "DEPOSITS",
+        depositData.currency
+      );
 
       const entries = [
         {
           accountId: account._id,
           entryType: EntryType.CREDIT,
-          amount: depositData.amount.toString()
+          amount: depositData.amount.toString(),
         },
         {
           accountId: new mongoose.Types.ObjectId(depositsAccountId),
           entryType: EntryType.DEBIT,
-          amount: depositData.amount.toString()
-        }
+          amount: depositData.amount.toString(),
+        },
       ];
 
       const transaction = new Transaction({
@@ -160,9 +170,11 @@ import { logger } from '../utils/logger';
         currency: depositData.currency,
         toAccount: account.accountNumber,
         status: TransactionStatus.PROCESSING,
-        description: depositData.description || 'Deposit transaction',
+        description: depositData.description || "Deposit transaction",
         reference: depositData.reference || transactionId,
-        metadata: depositData.metadata ? new Map(Object.entries(depositData.metadata)) : new Map()
+        metadata: depositData.metadata
+          ? new Map(Object.entries(depositData.metadata))
+          : new Map(),
       });
 
       await transaction.save({ session });
@@ -170,7 +182,9 @@ import { logger } from '../utils/logger';
       const currentBalance = new Decimal(accountBalance.balance.toString());
       const newBalance = currentBalance.plus(depositData.amount);
 
-      accountBalance.balance = mongoose.Types.Decimal128.fromString(newBalance.toString());
+      accountBalance.balance = mongoose.Types.Decimal128.fromString(
+        newBalance.toString()
+      );
       accountBalance.lastUpdated = new Date();
 
       await accountBalance.save({ session });
@@ -187,7 +201,7 @@ import { logger } from '../utils/logger';
         userId: depositData.userId,
         accountNumber: depositData.accountNumber,
         amount: depositData.amount,
-        currency: depositData.currency
+        currency: depositData.currency,
       });
 
       return this.mapTransactionToDTO(transaction);
@@ -196,7 +210,7 @@ import { logger } from '../utils/logger';
       session.endSession();
 
       if (error instanceof mongoose.Error.ValidationError) {
-        throw new BadRequestError('Invalid transaction data', error);
+        throw new BadRequestError("Invalid transaction data", error);
       }
 
       throw error;
@@ -208,18 +222,20 @@ import { logger } from '../utils/logger';
    * @param withdrawalData Withdrawal transaction data
    * @returns Created transaction
    */
-  async createWithdrawal(withdrawalData: WithdrawalTransactionDTO): Promise<TransactionResponseDTO> {
+  async createWithdrawal(
+    withdrawalData: WithdrawalTransactionDTO
+  ): Promise<TransactionResponseDTO> {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      const account = await Account.findOne({ 
+      const account = await Account.findOne({
         accountNumber: withdrawalData.accountNumber,
-        isActive: true 
+        isActive: true,
       }).session(session);
 
       if (!account) {
-        throw new NotFoundError('Account not found or inactive');
+        throw new NotFoundError("Account not found or inactive");
       }
 
       if (account.currency !== withdrawalData.currency) {
@@ -228,35 +244,38 @@ import { logger } from '../utils/logger';
         );
       }
 
-      const accountBalance = await AccountBalance.findOne({ 
-        accountId: account._id 
+      const accountBalance = await AccountBalance.findOne({
+        accountId: account._id,
       }).session(session);
 
       if (!accountBalance) {
-        throw new NotFoundError('Account balance not found');
+        throw new NotFoundError("Account balance not found");
       }
 
       const currentBalance = new Decimal(accountBalance.balance.toString());
       if (currentBalance.lessThan(withdrawalData.amount)) {
-        throw new InsufficientFundsError('Insufficient funds for withdrawal', {
+        throw new InsufficientFundsError("Insufficient funds for withdrawal", {
           available: currentBalance.toString(),
-          requested: withdrawalData.amount.toString()
+          requested: withdrawalData.amount.toString(),
         });
       }
 
-      const transactionId = generateTransactionId('WDR');
-      const withdrawalsAccountId = await this.getSystemAccount('WITHDRAWALS', withdrawalData.currency);
+      const transactionId = generateTransactionId("WDR");
+      const withdrawalsAccountId = await this.getSystemAccount(
+        "WITHDRAWALS",
+        withdrawalData.currency
+      );
       const entries = [
         {
           accountId: account._id,
           entryType: EntryType.DEBIT,
-          amount: withdrawalData.amount.toString()
+          amount: withdrawalData.amount.toString(),
         },
         {
           accountId: new mongoose.Types.ObjectId(withdrawalsAccountId),
           entryType: EntryType.CREDIT,
-          amount: withdrawalData.amount.toString()
-        }
+          amount: withdrawalData.amount.toString(),
+        },
       ];
 
       const transaction = new Transaction({
@@ -268,15 +287,19 @@ import { logger } from '../utils/logger';
         currency: withdrawalData.currency,
         fromAccount: account.accountNumber,
         status: TransactionStatus.PROCESSING,
-        description: withdrawalData.description || 'Withdrawal transaction',
+        description: withdrawalData.description || "Withdrawal transaction",
         reference: withdrawalData.reference || transactionId,
-        metadata: withdrawalData.metadata ? new Map(Object.entries(withdrawalData.metadata)) : new Map()
+        metadata: withdrawalData.metadata
+          ? new Map(Object.entries(withdrawalData.metadata))
+          : new Map(),
       });
 
       await transaction.save({ session });
 
       const newBalance = currentBalance.minus(withdrawalData.amount);
-      accountBalance.balance = mongoose.Types.Decimal128.fromString(newBalance.toString());
+      accountBalance.balance = mongoose.Types.Decimal128.fromString(
+        newBalance.toString()
+      );
       accountBalance.lastUpdated = new Date();
 
       await accountBalance.save({ session });
@@ -293,7 +316,7 @@ import { logger } from '../utils/logger';
         userId: withdrawalData.userId,
         accountNumber: withdrawalData.accountNumber,
         amount: withdrawalData.amount,
-        currency: withdrawalData.currency
+        currency: withdrawalData.currency,
       });
 
       return this.mapTransactionToDTO(transaction);
@@ -302,7 +325,7 @@ import { logger } from '../utils/logger';
       session.endSession();
 
       if (error instanceof mongoose.Error.ValidationError) {
-        throw new BadRequestError('Invalid transaction data', error);
+        throw new BadRequestError("Invalid transaction data", error);
       }
 
       throw error;
@@ -314,31 +337,35 @@ import { logger } from '../utils/logger';
    * @param transferData Transfer transaction data
    * @returns Created transaction
    */
-  async createTransfer(transferData: TransferTransactionDTO): Promise<TransactionResponseDTO> {
+  async createTransfer(
+    transferData: TransferTransactionDTO
+  ): Promise<TransactionResponseDTO> {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
       if (transferData.fromAccountNumber === transferData.toAccountNumber) {
-        throw new BadRequestError('Source and destination accounts cannot be the same');
+        throw new BadRequestError(
+          "Source and destination accounts cannot be the same"
+        );
       }
 
-      const sourceAccount = await Account.findOne({ 
+      const sourceAccount = await Account.findOne({
         accountNumber: transferData.fromAccountNumber,
-        isActive: true 
+        isActive: true,
       }).session(session);
 
       if (!sourceAccount) {
-        throw new NotFoundError('Source account not found or inactive');
+        throw new NotFoundError("Source account not found or inactive");
       }
 
-      const destinationAccount = await Account.findOne({ 
+      const destinationAccount = await Account.findOne({
         accountNumber: transferData.toAccountNumber,
-        isActive: true 
+        isActive: true,
       }).session(session);
 
       if (!destinationAccount) {
-        throw new NotFoundError('Destination account not found or inactive');
+        throw new NotFoundError("Destination account not found or inactive");
       }
 
       if (sourceAccount.currency !== transferData.currency) {
@@ -354,46 +381,50 @@ import { logger } from '../utils/logger';
       }
 
       if (sourceAccount.userId.toString() !== transferData.userId) {
-        throw new BadRequestError('You can only transfer from your own accounts');
+        throw new BadRequestError(
+          "You can only transfer from your own accounts"
+        );
       }
 
-      const sourceBalance = await AccountBalance.findOne({ 
-        accountId: sourceAccount._id 
+      const sourceBalance = await AccountBalance.findOne({
+        accountId: sourceAccount._id,
       }).session(session);
 
       if (!sourceBalance) {
-        throw new NotFoundError('Source account balance not found');
+        throw new NotFoundError("Source account balance not found");
       }
 
-      const destinationBalance = await AccountBalance.findOne({ 
-        accountId: destinationAccount._id 
+      const destinationBalance = await AccountBalance.findOne({
+        accountId: destinationAccount._id,
       }).session(session);
 
       if (!destinationBalance) {
-        throw new NotFoundError('Destination account balance not found');
+        throw new NotFoundError("Destination account balance not found");
       }
 
-      const currentSourceBalance = new Decimal(sourceBalance.balance.toString());
+      const currentSourceBalance = new Decimal(
+        sourceBalance.balance.toString()
+      );
       if (currentSourceBalance.lessThan(transferData.amount)) {
-        throw new InsufficientFundsError('Insufficient funds for transfer', {
+        throw new InsufficientFundsError("Insufficient funds for transfer", {
           available: currentSourceBalance.toString(),
-          requested: transferData.amount.toString()
+          requested: transferData.amount.toString(),
         });
       }
 
-      const transactionId = generateTransactionId('TRF');
+      const transactionId = generateTransactionId("TRF");
 
       const entries = [
         {
           accountId: sourceAccount._id,
           entryType: EntryType.DEBIT,
-          amount: transferData.amount.toString()
+          amount: transferData.amount.toString(),
         },
         {
           accountId: destinationAccount._id,
           entryType: EntryType.CREDIT,
-          amount: transferData.amount.toString()
-        }
+          amount: transferData.amount.toString(),
+        },
       ];
 
       const transaction = new Transaction({
@@ -406,21 +437,29 @@ import { logger } from '../utils/logger';
         fromAccount: sourceAccount.accountNumber,
         toAccount: destinationAccount.accountNumber,
         status: TransactionStatus.PROCESSING,
-        description: transferData.description || 'Transfer transaction',
+        description: transferData.description || "Transfer transaction",
         reference: transferData.reference || transactionId,
-        metadata: transferData.metadata ? new Map(Object.entries(transferData.metadata)) : new Map()
+        metadata: transferData.metadata
+          ? new Map(Object.entries(transferData.metadata))
+          : new Map(),
       });
 
       await transaction.save({ session });
 
       const newSourceBalance = currentSourceBalance.minus(transferData.amount);
-      sourceBalance.balance = mongoose.Types.Decimal128.fromString(newSourceBalance.toString());
+      sourceBalance.balance = mongoose.Types.Decimal128.fromString(
+        newSourceBalance.toString()
+      );
       sourceBalance.lastUpdated = new Date();
       await sourceBalance.save({ session });
 
-      const currentDestBalance = new Decimal(destinationBalance.balance.toString());
+      const currentDestBalance = new Decimal(
+        destinationBalance.balance.toString()
+      );
       const newDestBalance = currentDestBalance.plus(transferData.amount);
-      destinationBalance.balance = mongoose.Types.Decimal128.fromString(newDestBalance.toString());
+      destinationBalance.balance = mongoose.Types.Decimal128.fromString(
+        newDestBalance.toString()
+      );
       destinationBalance.lastUpdated = new Date();
       await destinationBalance.save({ session });
 
@@ -437,7 +476,7 @@ import { logger } from '../utils/logger';
         fromAccount: transferData.fromAccountNumber,
         toAccount: transferData.toAccountNumber,
         amount: transferData.amount,
-        currency: transferData.currency
+        currency: transferData.currency,
       });
 
       return this.mapTransactionToDTO(transaction);
@@ -446,14 +485,12 @@ import { logger } from '../utils/logger';
       session.endSession();
 
       if (error instanceof mongoose.Error.ValidationError) {
-        throw new BadRequestError('Invalid transaction data', error);
+        throw new BadRequestError("Invalid transaction data", error);
       }
 
       throw error;
     }
   }
-
-
 
   /**
    * Create a fee transaction (system charges)
@@ -465,13 +502,13 @@ import { logger } from '../utils/logger';
     session.startTransaction();
 
     try {
-      const account = await Account.findOne({ 
+      const account = await Account.findOne({
         accountNumber: feeData.accountNumber,
-        isActive: true 
+        isActive: true,
       }).session(session);
 
       if (!account) {
-        throw new NotFoundError('Account not found or inactive');
+        throw new NotFoundError("Account not found or inactive");
       }
 
       if (account.currency !== feeData.currency) {
@@ -480,36 +517,42 @@ import { logger } from '../utils/logger';
         );
       }
 
-      const accountBalance = await AccountBalance.findOne({ 
-        accountId: account._id 
+      const accountBalance = await AccountBalance.findOne({
+        accountId: account._id,
       }).session(session);
 
       if (!accountBalance) {
-        throw new NotFoundError('Account balance not found');
+        throw new NotFoundError("Account balance not found");
       }
 
       const currentBalance = new Decimal(accountBalance.balance.toString());
       if (currentBalance.lessThan(feeData.amount)) {
-        throw new InsufficientFundsError('Insufficient funds for fee deduction', {
-          available: currentBalance.toString(),
-          requested: feeData.amount.toString()
-        });
+        throw new InsufficientFundsError(
+          "Insufficient funds for fee deduction",
+          {
+            available: currentBalance.toString(),
+            requested: feeData.amount.toString(),
+          }
+        );
       }
 
-      const transactionId = generateTransactionId('FEE');
-      const feesAccountId = await this.getSystemAccount('FEES', feeData.currency);
+      const transactionId = generateTransactionId("FEE");
+      const feesAccountId = await this.getSystemAccount(
+        "FEES",
+        feeData.currency
+      );
 
       const entries = [
         {
           accountId: account._id,
           entryType: EntryType.DEBIT,
-          amount: feeData.amount.toString()
+          amount: feeData.amount.toString(),
         },
         {
           accountId: new mongoose.Types.ObjectId(feesAccountId),
           entryType: EntryType.CREDIT,
-          amount: feeData.amount.toString()
-        }
+          amount: feeData.amount.toString(),
+        },
       ];
 
       const transaction = new Transaction({
@@ -521,15 +564,19 @@ import { logger } from '../utils/logger';
         currency: feeData.currency,
         fromAccount: account.accountNumber,
         status: TransactionStatus.PROCESSING,
-        description: feeData.description || 'Fee transaction',
+        description: feeData.description || "Fee transaction",
         reference: feeData.reference || transactionId,
-        metadata: feeData.metadata ? new Map(Object.entries(feeData.metadata)) : new Map()
+        metadata: feeData.metadata
+          ? new Map(Object.entries(feeData.metadata))
+          : new Map(),
       });
 
       await transaction.save({ session });
 
       const newBalance = currentBalance.minus(feeData.amount);
-      accountBalance.balance = mongoose.Types.Decimal128.fromString(newBalance.toString());
+      accountBalance.balance = mongoose.Types.Decimal128.fromString(
+        newBalance.toString()
+      );
       accountBalance.lastUpdated = new Date();
 
       await accountBalance.save({ session });
@@ -546,7 +593,7 @@ import { logger } from '../utils/logger';
         userId: feeData.userId,
         accountNumber: feeData.accountNumber,
         amount: feeData.amount,
-        currency: feeData.currency
+        currency: feeData.currency,
       });
 
       return this.mapTransactionToDTO(transaction);
@@ -555,7 +602,7 @@ import { logger } from '../utils/logger';
       session.endSession();
 
       if (error instanceof mongoose.Error.ValidationError) {
-        throw new BadRequestError('Invalid transaction data', error);
+        throw new BadRequestError("Invalid transaction data", error);
       }
 
       throw error;
@@ -567,37 +614,44 @@ import { logger } from '../utils/logger';
    * @param reversalData Reversal transaction data
    * @returns Created reversal transaction
    */
-  async reverseTransaction(reversalData: ReversalTransactionDTO): Promise<TransactionResponseDTO> {
+  async reverseTransaction(
+    reversalData: ReversalTransactionDTO
+  ): Promise<TransactionResponseDTO> {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      const originalTransaction = await Transaction.findOne({ 
+      const originalTransaction = await Transaction.findOne({
         transactionId: reversalData.originalTransactionId,
-        status: TransactionStatus.COMPLETED
+        status: TransactionStatus.COMPLETED,
       }).session(session);
 
       if (!originalTransaction) {
-        throw new NotFoundError('Original transaction not found or not in completed state');
+        throw new NotFoundError(
+          "Original transaction not found or not in completed state"
+        );
       }
 
       const existingReversal = await Transaction.findOne({
-        'metadata.originalTransactionId': reversalData.originalTransactionId,
-        transactionType: TransactionType.REVERSAL
+        "metadata.originalTransactionId": reversalData.originalTransactionId,
+        transactionType: TransactionType.REVERSAL,
       }).session(session);
 
       if (existingReversal) {
-        throw new BadRequestError('Transaction has already been reversed', {
-          reversalId: existingReversal.transactionId
+        throw new BadRequestError("Transaction has already been reversed", {
+          reversalId: existingReversal.transactionId,
         });
       }
 
-      const transactionId = generateTransactionId('REV');
-      
-      const reversedEntries = originalTransaction.entries.map(entry => ({
+      const transactionId = generateTransactionId("REV");
+
+      const reversedEntries = originalTransaction.entries.map((entry) => ({
         accountId: entry.accountId,
-        entryType: entry.entryType === EntryType.DEBIT ? EntryType.CREDIT : EntryType.DEBIT,
-        amount: entry.amount.toString()
+        entryType:
+          entry.entryType === EntryType.DEBIT
+            ? EntryType.CREDIT
+            : EntryType.DEBIT,
+        amount: entry.amount.toString(),
       }));
 
       const reversalTransaction = new Transaction({
@@ -607,27 +661,29 @@ import { logger } from '../utils/logger';
         entries: reversedEntries,
         amount: originalTransaction.amount,
         currency: originalTransaction.currency,
-        fromAccount: originalTransaction.toAccount, 
+        fromAccount: originalTransaction.toAccount,
         toAccount: originalTransaction.fromAccount,
         status: TransactionStatus.PROCESSING,
         description: `Reversal: ${reversalData.reason} (Original: ${originalTransaction.transactionId})`,
         reference: reversalData.originalTransactionId,
         metadata: new Map([
           ...Object.entries(reversalData.metadata || {}),
-          ['originalTransactionId', originalTransaction.transactionId],
-          ['reversalReason', reversalData.reason]
-        ])
+          ["originalTransactionId", originalTransaction.transactionId],
+          ["reversalReason", reversalData.reason],
+        ]),
       });
 
       await reversalTransaction.save({ session });
 
       for (const entry of reversedEntries) {
-        const accountBalance = await AccountBalance.findOne({ 
-          accountId: entry.accountId 
+        const accountBalance = await AccountBalance.findOne({
+          accountId: entry.accountId,
         }).session(session);
 
         if (!accountBalance) {
-          throw new NotFoundError(`Account balance not found for account ID: ${entry.accountId}`);
+          throw new NotFoundError(
+            `Account balance not found for account ID: ${entry.accountId}`
+          );
         }
 
         const currentBalance = new Decimal(accountBalance.balance.toString());
@@ -638,17 +694,22 @@ import { logger } from '../utils/logger';
           newBalance = currentBalance.plus(entryAmount);
         } else {
           newBalance = currentBalance.minus(entryAmount);
-          
+
           if (newBalance.isNegative()) {
-            throw new InsufficientFundsError('Insufficient funds for reversal', {
-              accountId: entry.accountId.toString(),
-              available: currentBalance.toString(),
-              required: entryAmount.toString()
-            });
+            throw new InsufficientFundsError(
+              "Insufficient funds for reversal",
+              {
+                accountId: entry.accountId.toString(),
+                available: currentBalance.toString(),
+                required: entryAmount.toString(),
+              }
+            );
           }
         }
 
-        accountBalance.balance = mongoose.Types.Decimal128.fromString(newBalance.toString());
+        accountBalance.balance = mongoose.Types.Decimal128.fromString(
+          newBalance.toString()
+        );
         accountBalance.lastUpdated = new Date();
         await accountBalance.save({ session });
       }
@@ -666,7 +727,7 @@ import { logger } from '../utils/logger';
         userId: reversalData.userId,
         amount: originalTransaction.amount,
         currency: originalTransaction.currency,
-        reason: reversalData.reason
+        reason: reversalData.reason,
       });
 
       return this.mapTransactionToDTO(reversalTransaction);
@@ -675,7 +736,7 @@ import { logger } from '../utils/logger';
       session.endSession();
 
       if (error instanceof mongoose.Error.ValidationError) {
-        throw new BadRequestError('Invalid transaction data', error);
+        throw new BadRequestError("Invalid transaction data", error);
       }
 
       throw error;
@@ -687,11 +748,13 @@ import { logger } from '../utils/logger';
    * @param id Transaction MongoDB ID
    * @returns Transaction data
    */
-  async getTransactionById(id: string): Promise<TransactionDetailedResponseDTO> {
+  async getTransactionById(
+    id: string
+  ): Promise<TransactionDetailedResponseDTO> {
     const transaction = await Transaction.findById(id);
 
     if (!transaction) {
-      throw new NotFoundError('Transaction not found');
+      throw new NotFoundError("Transaction not found");
     }
 
     return this.mapTransactionToDetailedDTO(transaction);
@@ -702,11 +765,13 @@ import { logger } from '../utils/logger';
    * @param transactionId Transaction ID
    * @returns Transaction data
    */
-  async getTransactionByTransactionId(transactionId: string): Promise<TransactionDetailedResponseDTO> {
+  async getTransactionByTransactionId(
+    transactionId: string
+  ): Promise<TransactionDetailedResponseDTO> {
     const transaction = await Transaction.findOne({ transactionId });
 
     if (!transaction) {
-      throw new NotFoundError('Transaction not found');
+      throw new NotFoundError("Transaction not found");
     }
 
     return this.mapTransactionToDetailedDTO(transaction);
@@ -721,7 +786,7 @@ import { logger } from '../utils/logger';
   async getUserTransactions(
     userId: string,
     queryParams: TransactionQueryParams
-  ): Promise<{ transactions: TransactionResponseDTO[], total: number }> {
+  ): Promise<{ transactions: TransactionResponseDTO[]; total: number }> {
     const query: any = { userId: new mongoose.Types.ObjectId(userId) };
 
     if (queryParams.transactionType) {
@@ -745,18 +810,22 @@ import { logger } from '../utils/logger';
     if (queryParams.accountNumber) {
       query.$or = [
         { fromAccount: queryParams.accountNumber },
-        { toAccount: queryParams.accountNumber }
+        { toAccount: queryParams.accountNumber },
       ];
     }
 
     if (queryParams.minAmount) {
-      const minAmountDecimal = mongoose.Types.Decimal128.fromString(queryParams.minAmount.toString());
+      const minAmountDecimal = mongoose.Types.Decimal128.fromString(
+        queryParams.minAmount.toString()
+      );
       query.amount = query.amount || {};
       query.amount.$gte = minAmountDecimal;
     }
 
     if (queryParams.maxAmount) {
-      const maxAmountDecimal = mongoose.Types.Decimal128.fromString(queryParams.maxAmount.toString());
+      const maxAmountDecimal = mongoose.Types.Decimal128.fromString(
+        queryParams.maxAmount.toString()
+      );
       query.amount = query.amount || {};
       query.amount.$lte = maxAmountDecimal;
     }
@@ -765,32 +834,30 @@ import { logger } from '../utils/logger';
     const limit = queryParams.limit || 10;
     const skip = (page - 1) * limit;
 
-    const sortField = queryParams.sortBy || 'createdAt';
-    const sortDirection = queryParams.sortDirection === 'asc' ? 1 : -1;
+    const sortField = queryParams.sortBy || "createdAt";
+    const sortDirection = queryParams.sortDirection === "asc" ? 1 : -1;
     const sort: any = {};
     sort[sortField] = sortDirection;
 
     try {
       const [transactions, total] = await Promise.all([
-        Transaction.find(query)
-          .sort(sort)
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-        Transaction.countDocuments(query)
+        Transaction.find(query).sort(sort).skip(skip).limit(limit).lean(),
+        Transaction.countDocuments(query),
       ]);
 
       return {
-        transactions: transactions.map(tx => this.mapTransactionToDTO(tx as any)),
-        total
+        transactions: transactions.map((tx) =>
+          this.mapTransactionToDTO(tx as any)
+        ),
+        total,
       };
     } catch (error) {
-      logger.error('Error fetching user transactions', {
+      logger.error("Error fetching user transactions", {
         userId,
         error: (error as Error).message,
-        queryParams
+        queryParams,
       });
-      throw new DatabaseError('Error retrieving transactions', error);
+      throw new DatabaseError("Error retrieving transactions", error);
     }
   }
 
@@ -803,12 +870,9 @@ import { logger } from '../utils/logger';
   async getAccountTransactions(
     accountNumber: string,
     queryParams: TransactionQueryParams
-  ): Promise<{ transactions: TransactionResponseDTO[], total: number }> {
+  ): Promise<{ transactions: TransactionResponseDTO[]; total: number }> {
     const query: any = {
-      $or: [
-        { fromAccount: accountNumber },
-        { toAccount: accountNumber }
-      ]
+      "entries.accountId": accountNumber,
     };
 
     if (queryParams.transactionType) {
@@ -833,43 +897,28 @@ import { logger } from '../utils/logger';
     const limit = queryParams.limit || 10;
     const skip = (page - 1) * limit;
 
-    const sortField = queryParams.sortBy || 'createdAt';
-    const sortDirection = queryParams.sortDirection === 'asc' ? 1 : -1;
+    const sortField = queryParams.sortBy || "createdAt";
+    const sortDirection = queryParams.sortDirection === "asc" ? 1 : -1;
     const sort: any = {};
     sort[sortField] = sortDirection;
 
     try {
-      // Use aggregation for better performance with complex conditions
-      const pipeline = [
-        { $match: query },
-        { $sort: sort },
-        { $skip: skip },
-        { $limit: limit }
-      ];
-
-      const countPipeline = [
-        { $match: query },
-        { $count: 'total' }
-      ];
-
-      const [transactions, countResult] = await Promise.all([
-        Transaction.aggregate(pipeline),
-        Transaction.aggregate(countPipeline)
+      const [transactions, total] = await Promise.all([
+        Transaction.find(query).sort(sort).skip(skip).limit(limit),
+        Transaction.countDocuments(query),
       ]);
 
-      const total = countResult.length > 0 ? countResult[0].total : 0;
-
       return {
-        transactions: transactions.map(tx => this.mapTransactionToDTO(tx as any)),
-        total
+        transactions: transactions.map((tx) => this.mapTransactionToDTO(tx)),
+        total,
       };
     } catch (error) {
-      logger.error('Error fetching account transactions', {
+      logger.error("Error fetching account transactions", {
         accountNumber,
         error: (error as Error).message,
-        queryParams
+        queryParams,
       });
-      throw new DatabaseError('Error retrieving transactions', error);
+      throw new DatabaseError("Error retrieving transactions", error);
     }
   }
 
@@ -885,127 +934,9 @@ import { logger } from '../utils/logger';
     startDate?: Date,
     endDate?: Date
   ): Promise<any> {
-    const query: any = { 
+    const query: any = {
       userId: new mongoose.Types.ObjectId(userId),
-      status: TransactionStatus.COMPLETED
-    };
-
-    if (startDate) {
-      query.createdAt = query.createdAt || {};
-      query.createdAt.$gte = startDate;
-    }
-
-    if (endDate) {
-      query.createdAt = query.createdAt || {};
-      query.createdAt.$lte = endDate;
-    }
-
-    try {
-      const pipeline : PipelineStage[] = [
-        { $match: query },
-        { $group: {
-            _id: {
-              transactionType: "$transactionType",
-              currency: "$currency"
-            },
-            count: { $sum: 1 },
-            totalAmount: { 
-              $sum: { 
-                $convert: { 
-                  input: "$amount", 
-                  to: "decimal", 
-                  onError: "0.00", 
-                  onNull: "0.00" 
-                } 
-              } 
-            },
-            avgAmount: { 
-              $avg: { 
-                $convert: { 
-                  input: "$amount", 
-                  to: "decimal", 
-                  onError: "0.00", 
-                  onNull: "0.00" 
-                } 
-              } 
-            }
-          }
-        },
-        { $sort: { "_id.transactionType": 1, "_id.currency": 1 } }
-      ];
-
-      const monthlyTrendPipeline : PipelineStage[]= [
-        { $match: query },
-        { 
-          $group: {
-            _id: {
-              year: { $year: "$createdAt" },
-              month: { $month: "$createdAt" },
-              transactionType: "$transactionType"
-            },
-            count: { $sum: 1 },
-            totalAmount: { 
-              $sum: { 
-                $convert: { 
-                  input: "$amount", 
-                  to: "decimal", 
-                  onError: "0.00", 
-                  onNull: "0.00" 
-                } 
-              } 
-            }
-          }
-        },
-        { 
-          $sort: { 
-            "_id.year": 1, 
-            "_id.month": 1, 
-            "_id.transactionType": 1 
-          } 
-        }
-      ];
-
-      // Execute both aggregations in parallel
-      const [stats, monthlyTrend] = await Promise.all([
-        Transaction.aggregate(pipeline),
-        Transaction.aggregate(monthlyTrendPipeline)
-      ]);
-
-      // Calculate overall summary
-      const summary = this.calculateTransactionSummary(stats);
-
-      return {
-        summary,
-        statsByType: stats,
-        monthlyTrend
-      };
-    } catch (error) {
-      logger.error('Error generating user transaction stats', {
-        userId,
-        error: (error as Error).message
-      });
-      throw new DatabaseError('Error generating transaction statistics', error);
-    }
-  }
-
-  /**
-   * Get transaction statistics for an account
-   * @param accountNumber Account number
-   * @param startDate Optional start date for stats
-   * @param endDate Optional end date for stats
-   * @returns Transaction statistics
-   */
-  async getAccountTransactionStats(
-    accountNumber: string,
-    startDate?: Date,
-    endDate?: Date
-  ): Promise<any> {
-    const query: any = { 
-      $or: [
-        { fromAccount: accountNumber },
-        { toAccount: accountNumber }
-      ],
-      status: TransactionStatus.COMPLETED
+      status: TransactionStatus.COMPLETED,
     };
 
     if (startDate) {
@@ -1021,88 +952,212 @@ import { logger } from '../utils/logger';
     try {
       const pipeline: PipelineStage[] = [
         { $match: query },
-        { 
+        {
+          $group: {
+            _id: {
+              transactionType: "$transactionType",
+              currency: "$currency",
+            },
+            count: { $sum: 1 },
+            totalAmount: {
+              $sum: {
+                $convert: {
+                  input: "$amount",
+                  to: "decimal",
+                  onError: "0.00",
+                  onNull: "0.00",
+                },
+              },
+            },
+            avgAmount: {
+              $avg: {
+                $convert: {
+                  input: "$amount",
+                  to: "decimal",
+                  onError: "0.00",
+                  onNull: "0.00",
+                },
+              },
+            },
+          },
+        },
+        { $sort: { "_id.transactionType": 1, "_id.currency": 1 } },
+      ];
+
+      const monthlyTrendPipeline: PipelineStage[] = [
+        { $match: query },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              transactionType: "$transactionType",
+            },
+            count: { $sum: 1 },
+            totalAmount: {
+              $sum: {
+                $convert: {
+                  input: "$amount",
+                  to: "decimal",
+                  onError: "0.00",
+                  onNull: "0.00",
+                },
+              },
+            },
+          },
+        },
+        {
+          $sort: {
+            "_id.year": 1,
+            "_id.month": 1,
+            "_id.transactionType": 1,
+          },
+        },
+      ];
+
+      // Execute both aggregations in parallel
+      const [stats, monthlyTrend] = await Promise.all([
+        Transaction.aggregate(pipeline),
+        Transaction.aggregate(monthlyTrendPipeline),
+      ]);
+
+      // Calculate overall summary
+      const summary = this.calculateTransactionSummary(stats);
+
+      return {
+        summary,
+        statsByType: stats,
+        monthlyTrend,
+      };
+    } catch (error) {
+      logger.error("Error generating user transaction stats", {
+        userId,
+        error: (error as Error).message,
+      });
+      throw new DatabaseError("Error generating transaction statistics", error);
+    }
+  }
+
+  /**
+   * Get transaction statistics for an account
+   * @param accountNumber Account number
+   * @param startDate Optional start date for stats
+   * @param endDate Optional end date for stats
+   * @returns Transaction statistics
+   */
+  async getAccountTransactionStats(
+    accountNumber: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<any> {
+    const accountId = new mongoose.Types.ObjectId(accountNumber);
+
+    try {
+      const query: any = {
+        "entries.accountId": accountId,
+        status: TransactionStatus.COMPLETED,
+      };
+
+      if (startDate) {
+        query.createdAt = query.createdAt || {};
+        query.createdAt.$gte = startDate;
+      }
+
+      if (endDate) {
+        query.createdAt = query.createdAt || {};
+        query.createdAt.$lte = endDate;
+      }
+
+      const pipeline: PipelineStage[] = [
+        { $match: query },
+        { $unwind: "$entries" },
+        { $match: { "entries.accountId": accountId } },
+        {
           $addFields: {
             direction: {
               $cond: [
-                { $eq: ["$toAccount", accountNumber] },
+                { $eq: ["$entries.entryType", EntryType.CREDIT] },
                 "INCOMING",
-                "OUTGOING"
-              ]
-            }
-          }
+                "OUTGOING",
+              ],
+            },
+          },
         },
-        { 
+        {
           $group: {
             _id: {
               transactionType: "$transactionType",
               direction: "$direction",
-              currency: "$currency"
+              currency: "$currency",
             },
             count: { $sum: 1 },
-            totalAmount: { 
-              $sum: { 
-                $convert: { 
-                  input: "$amount", 
-                  to: "decimal", 
-                  onError: "0.00", 
-                  onNull: "0.00" 
-                } 
-              } 
+            totalAmount: {
+              $sum: {
+                $convert: {
+                  input: "$entries.amount",
+                  to: "decimal",
+                  onError: "0.00",
+                  onNull: "0.00",
+                },
+              },
             },
-            avgAmount: { 
-              $avg: { 
-                $convert: { 
-                  input: "$amount", 
-                  to: "decimal", 
-                  onError: "0.00", 
-                  onNull: "0.00" 
-                } 
-              } 
-            }
-          }
+            avgAmount: {
+              $avg: {
+                $convert: {
+                  input: "$entries.amount",
+                  to: "decimal",
+                  onError: "0.00",
+                  onNull: "0.00",
+                },
+              },
+            },
+          },
         },
-        { $sort: { "_id.direction": 1, "_id.transactionType": 1 } }
+        { $sort: { "_id.direction": 1, "_id.transactionType": 1 } },
       ];
 
-      const dailyTrendPipeline :PipelineStage[]= [
+      const dailyTrendPipeline: PipelineStage[] = [
         { $match: query },
-        { 
+        { $unwind: "$entries" },
+        { $match: { "entries.accountId": accountId } },
+        {
           $addFields: {
             direction: {
               $cond: [
-                { $eq: ["$toAccount", accountNumber] },
+                { $eq: ["$entries.entryType", EntryType.CREDIT] },
                 "INCOMING",
-                "OUTGOING"
-              ]
-            }
-          }
+                "OUTGOING",
+              ],
+            },
+          },
         },
-        { 
+        {
           $group: {
             _id: {
-              date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-              direction: "$direction"
+              date: {
+                $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+              },
+              direction: "$direction",
             },
             count: { $sum: 1 },
-            totalAmount: { 
-              $sum: { 
-                $convert: { 
-                  input: "$amount", 
-                  to: "decimal", 
-                  onError: "0.00", 
-                  onNull: "0.00" 
-                } 
-              } 
-            }
-          }
+            totalAmount: {
+              $sum: {
+                $convert: {
+                  input: "$entries.amount",
+                  to: "decimal",
+                  onError: "0.00",
+                  onNull: "0.00",
+                },
+              },
+            },
+          },
         },
-        { $sort: { "_id.date": 1, "_id.direction": 1 } }
+        { $sort: { "_id.date": 1, "_id.direction": 1 } },
       ];
 
       const [stats, dailyTrend] = await Promise.all([
         Transaction.aggregate(pipeline),
-        Transaction.aggregate(dailyTrendPipeline)
+        Transaction.aggregate(dailyTrendPipeline),
       ]);
 
       const netFlow = this.calculateNetFlow(stats);
@@ -1110,14 +1165,14 @@ import { logger } from '../utils/logger';
       return {
         netFlow,
         statsByType: stats,
-        dailyTrend
+        dailyTrend,
       };
     } catch (error) {
-      logger.error('Error generating account transaction stats', {
+      logger.error("Error generating account transaction stats", {
         accountNumber,
-        error: (error as Error).message
+        error: (error as Error).message,
       });
-      throw new DatabaseError('Error generating transaction statistics', error);
+      throw new DatabaseError("Error generating transaction statistics", error);
     }
   }
 
@@ -1137,11 +1192,13 @@ import { logger } from '../utils/logger';
     try {
       const pendingTransactions = await Transaction.find({
         status: TransactionStatus.PENDING,
-        createdAt: { $lte: new Date(Date.now() - 60000) } 
+        createdAt: { $lte: new Date(Date.now() - 60000) },
       }).session(session);
 
-      logger.info(`Processing ${pendingTransactions.length} pending transactions`);
-      
+      logger.info(
+        `Processing ${pendingTransactions.length} pending transactions`
+      );
+
       const processed: string[] = [];
       const failed: string[] = [];
 
@@ -1152,14 +1209,18 @@ import { logger } from '../utils/logger';
 
           for (const entry of transaction.entries) {
             const accountBalance = await AccountBalance.findOne({
-              accountId: entry.accountId
+              accountId: entry.accountId,
             }).session(session);
 
             if (!accountBalance) {
-              throw new NotFoundError(`Account balance not found for account ID: ${entry.accountId}`);
+              throw new NotFoundError(
+                `Account balance not found for account ID: ${entry.accountId}`
+              );
             }
 
-            const currentBalance = new Decimal(accountBalance.balance.toString());
+            const currentBalance = new Decimal(
+              accountBalance.balance.toString()
+            );
             const entryAmount = new Decimal(entry.amount.toString());
             let newBalance;
 
@@ -1167,17 +1228,22 @@ import { logger } from '../utils/logger';
               newBalance = currentBalance.plus(entryAmount);
             } else {
               newBalance = currentBalance.minus(entryAmount);
-              
+
               if (newBalance.isNegative()) {
-                throw new InsufficientFundsError('Insufficient funds for transaction', {
-                  accountId: entry.accountId.toString(),
-                  available: currentBalance.toString(),
-                  required: entryAmount.toString()
-                });
+                throw new InsufficientFundsError(
+                  "Insufficient funds for transaction",
+                  {
+                    accountId: entry.accountId.toString(),
+                    available: currentBalance.toString(),
+                    required: entryAmount.toString(),
+                  }
+                );
               }
             }
 
-            accountBalance.balance = mongoose.Types.Decimal128.fromString(newBalance.toString());
+            accountBalance.balance = mongoose.Types.Decimal128.fromString(
+              newBalance.toString()
+            );
             accountBalance.lastUpdated = new Date();
             await accountBalance.save({ session });
           }
@@ -1194,32 +1260,40 @@ import { logger } from '../utils/logger';
 
           failed.push(transaction.transactionId);
 
-          logger.error(`Failed to process transaction ${transaction.transactionId}`, {
-            transactionId: transaction.transactionId,
-            error: (error as Error).message
-          });
+          logger.error(
+            `Failed to process transaction ${transaction.transactionId}`,
+            {
+              transactionId: transaction.transactionId,
+              error: (error as Error).message,
+            }
+          );
         }
       }
 
       await session.commitTransaction();
       session.endSession();
 
-      logger.info(`Processed ${processed.length} transactions successfully, ${failed.length} failed`);
+      logger.info(
+        `Processed ${processed.length} transactions successfully, ${failed.length} failed`
+      );
 
       return {
         processed: processed.length,
         failed: failed.length,
-        failedIds: failed
+        failedIds: failed,
       };
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
 
-      logger.error('Error in bulk transaction processing', {
-        error: (error as Error).message
+      logger.error("Error in bulk transaction processing", {
+        error: (error as Error).message,
       });
 
-      throw new TransactionError('Failed to process pending transactions', error);
+      throw new TransactionError(
+        "Failed to process pending transactions",
+        error
+      );
     }
   }
 
@@ -1232,21 +1306,24 @@ import { logger } from '../utils/logger';
     const summary: any = {
       totalCount: 0,
       totalAmountByCurrency: {},
-      countByType: {}
+      countByType: {},
     };
 
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       const transactionType = stat._id.transactionType;
       const currency = stat._id.currency;
-      
+
       summary.totalCount += stat.count;
-      
-      summary.countByType[transactionType] = (summary.countByType[transactionType] || 0) + stat.count;
-      
+
+      summary.countByType[transactionType] =
+        (summary.countByType[transactionType] || 0) + stat.count;
+
       if (!summary.totalAmountByCurrency[currency]) {
         summary.totalAmountByCurrency[currency] = 0;
       }
-      summary.totalAmountByCurrency[currency] += parseFloat(stat.totalAmount.toString());
+      summary.totalAmountByCurrency[currency] += parseFloat(
+        stat.totalAmount.toString()
+      );
     });
 
     for (const currency in summary.totalAmountByCurrency) {
@@ -1268,19 +1345,26 @@ import { logger } from '../utils/logger';
     const incomingTotals: Record<string, Decimal> = {};
     const outgoingTotals: Record<string, Decimal> = {};
 
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       const direction = stat._id.direction;
       const currency = stat._id.currency;
       const amount = new Decimal(stat.totalAmount.toString());
-      
-      if (direction === 'INCOMING') {
-        incomingTotals[currency] = (incomingTotals[currency] || new Decimal(0)).plus(amount);
+
+      if (direction === "INCOMING") {
+        incomingTotals[currency] = (
+          incomingTotals[currency] || new Decimal(0)
+        ).plus(amount);
       } else {
-        outgoingTotals[currency] = (outgoingTotals[currency] || new Decimal(0)).plus(amount);
+        outgoingTotals[currency] = (
+          outgoingTotals[currency] || new Decimal(0)
+        ).plus(amount);
       }
     });
 
-    for (const currency of Object.keys({...incomingTotals, ...outgoingTotals})) {
+    for (const currency of Object.keys({
+      ...incomingTotals,
+      ...outgoingTotals,
+    })) {
       const incoming = incomingTotals[currency] || new Decimal(0);
       const outgoing = outgoingTotals[currency] || new Decimal(0);
       netFlow[currency] = incoming.minus(outgoing).toFixed(2);
@@ -1294,7 +1378,9 @@ import { logger } from '../utils/logger';
    * @param transaction Transaction document
    * @returns Transaction response DTO
    */
-  private mapTransactionToDTO(transaction: ITransaction): TransactionResponseDTO {
+  private mapTransactionToDTO(
+    transaction: ITransaction
+  ): TransactionResponseDTO {
     return {
       id: transaction._id.toString(),
       transactionId: transaction.transactionId,
@@ -1307,7 +1393,7 @@ import { logger } from '../utils/logger';
       description: transaction.description,
       reference: transaction.reference,
       createdAt: transaction.createdAt,
-      processedAt: transaction.processedAt
+      processedAt: transaction.processedAt,
     };
   }
 
@@ -1316,11 +1402,13 @@ import { logger } from '../utils/logger';
    * @param transaction Transaction document
    * @returns Transaction detailed response DTO
    */
-  private mapTransactionToDetailedDTO(transaction: ITransaction): TransactionDetailedResponseDTO {
-    const entries = transaction.entries.map(entry => ({
+  private mapTransactionToDetailedDTO(
+    transaction: ITransaction
+  ): TransactionDetailedResponseDTO {
+    const entries = transaction.entries.map((entry) => ({
       accountId: entry.accountId.toString(),
       entryType: entry.entryType,
-      amount: entry.amount.toString()
+      amount: entry.amount.toString(),
     }));
 
     const metadata: Record<string, any> = {};
@@ -1333,9 +1421,9 @@ import { logger } from '../utils/logger';
       entries,
       metadata,
       failureReason: transaction.failureReason,
-      userId: transaction.userId.toString()
+      userId: transaction.userId.toString(),
     };
   }
 }
 
-export default new TransactionService()
+export default new TransactionService();

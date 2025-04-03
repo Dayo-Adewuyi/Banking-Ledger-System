@@ -269,6 +269,7 @@ export class AccountController {
         throw new ForbiddenError('You do not have permission to access this account');
       }
 
+     
       const queryParams = {
         transactionType: req.query.transactionType as TransactionType | undefined,
         status: req.query.status as TransactionStatus | undefined,
@@ -283,7 +284,7 @@ export class AccountController {
       };
 
       const { transactions, total } = await TransactionService.getAccountTransactions(
-        account.accountNumber,
+        accountId,
         queryParams
       );
 
@@ -324,7 +325,7 @@ export class AccountController {
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
       const stats = await TransactionService.getAccountTransactionStats(
-        account.accountNumber,
+        accountId,
         startDate,
         endDate
       );
