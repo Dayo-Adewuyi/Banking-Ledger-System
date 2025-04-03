@@ -17,11 +17,12 @@ export const authenticateJwt = (req: Request, res: Response, next: NextFunction)
     }
     
     const token = authHeader.split(' ')[1];
-    
+   
     const decoded = jwt.verify(
       token, 
       Buffer.from(jwtConfig.secret),
       {
+        algorithms: ['HS256'],
         issuer: jwtConfig.issuer,
         audience: jwtConfig.audience
       }
@@ -36,6 +37,7 @@ export const authenticateJwt = (req: Request, res: Response, next: NextFunction)
     
     next();
   } catch (error) {
+    console.trace(error);
     if (error instanceof jwt.JsonWebTokenError) {
       next(new UnauthorizedError('Invalid token'));
     } else if (error instanceof jwt.TokenExpiredError) {

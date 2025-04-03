@@ -62,25 +62,7 @@ router.post(
     wrapController(TransactionController.createTransfer)
 );
 
-/**
- * @route POST /api/v1/transactions/payment
- * @desc Create a payment transaction
- * @access Private
- */
-router.post(
-  '/payment',
-  authMiddleware.authenticateJwt,
-  securityMiddleware.sensitiveRateLimiter,
-  validationMiddleware.validateRequest([
-    body('accountNumber').notEmpty().isString().withMessage('Account number is required'),
-    body('recipientName').notEmpty().isString().withMessage('Recipient name is required'),
-    body('recipientReference').notEmpty().isString().withMessage('Recipient reference is required'),
-    body('amount').isNumeric().withMessage('Amount must be a number'),
-    body('currency').isIn(Object.values(CurrencyCode))
-      .withMessage('Invalid currency code')
-  ]),
- wrapController(TransactionController.createPayment)
-);
+
 
 /**
  * @route POST /api/v1/transactions/:transactionId/reverse

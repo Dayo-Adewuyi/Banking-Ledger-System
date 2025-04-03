@@ -36,6 +36,72 @@ import { logger } from '../utils/logger';
  class TransactionService {
   private readonly TRANSACTION_CACHE_TTL = 300;
 
+  private systemAccounts: Record<string, string> = {};
+
+
+  /**
+   * Get or create a system account for a specific purpose
+   * @param accountType The type of system account
+   * @param currency The currency for the system account
+   * @returns System account ID
+   */
+  private async getSystemAccount(accountType: string, currency: CurrencyCode): Promise<string> {
+    const cacheKey = `${accountType}_${currency}`;
+    
+    if (this.systemAccounts[cacheKey]) {
+      return this.systemAccounts[cacheKey];
+    }
+    
+    const systemAccount = await Account.findOne({
+      accountType: 'SYSTEM',
+      currency,
+      'metadata.purpose': accountType
+    });
+    
+    if (systemAccount) {
+      this.systemAccounts[cacheKey] = systemAccount._id.toString();
+      return systemAccount._id.toString();
+    }
+    
+    const systemUserId = await this.getSystemUserId();
+    
+    const newSystemAccount = new Account({
+      userId: systemUserId,
+      accountNumber: generateTransactionId('SYS'),
+      accountType: 'SYSTEM',
+      currency,
+      isActive: true,
+      metadata: new Map([
+        ['purpose', accountType],
+        ['description', `System ${accountType} Account for ${currency}`],
+        ['createdAt', new Date().toISOString()]
+      ])
+    });
+    
+    await newSystemAccount.save();
+    
+    const systemBalance = new AccountBalance({
+      accountId: newSystemAccount._id,
+      currency,
+      balance: '0',
+      lastUpdated: new Date()
+    });
+    
+    await systemBalance.save();
+    
+    this.systemAccounts[cacheKey] = newSystemAccount._id.toString();
+    return newSystemAccount._id.toString();
+  }
+  
+  /**
+   * Get system user ID for system accounts
+   * @returns System user ID
+   */
+  private async getSystemUserId(): Promise<string> {
+
+    return "000000000000000000000001";
+  }
+
   /**
    * Create a deposit transaction
    * @param depositData Deposit transaction data
@@ -70,11 +136,17 @@ import { logger } from '../utils/logger';
       }
 
       const transactionId = generateTransactionId('DEP');
+      const depositsAccountId = await this.getSystemAccount('DEPOSITS', depositData.currency);
 
       const entries = [
         {
           accountId: account._id,
           entryType: EntryType.CREDIT,
+          amount: depositData.amount.toString()
+        },
+        {
+          accountId: new mongoose.Types.ObjectId(depositsAccountId),
+          entryType: EntryType.DEBIT,
           amount: depositData.amount.toString()
         }
       ];
@@ -173,11 +245,16 @@ import { logger } from '../utils/logger';
       }
 
       const transactionId = generateTransactionId('WDR');
-
+      const withdrawalsAccountId = await this.getSystemAccount('WITHDRAWALS', withdrawalData.currency);
       const entries = [
         {
           accountId: account._id,
           entryType: EntryType.DEBIT,
+          amount: withdrawalData.amount.toString()
+        },
+        {
+          accountId: new mongoose.Types.ObjectId(withdrawalsAccountId),
+          entryType: EntryType.CREDIT,
           amount: withdrawalData.amount.toString()
         }
       ];
@@ -376,114 +453,7 @@ import { logger } from '../utils/logger';
     }
   }
 
-  /**
-   * Create a payment transaction (e.g., bill payment)
-   * @param paymentData Payment transaction data
-   * @returns Created transaction
-   */
-  async createPayment(paymentData: PaymentTransactionDTO): Promise<TransactionResponseDTO> {
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
-    try {
-      const account = await Account.findOne({ 
-        accountNumber: paymentData.accountNumber,
-        isActive: true 
-      }).session(session);
-
-      if (!account) {
-        throw new NotFoundError('Account not found or inactive');
-      }
-
-      if (account.currency !== paymentData.currency) {
-        throw new BadRequestError(
-          `Currency mismatch. Account is in ${account.currency}, but payment is in ${paymentData.currency}`
-        );
-      }
-
-      const accountBalance = await AccountBalance.findOne({ 
-        accountId: account._id 
-      }).session(session);
-
-      if (!accountBalance) {
-        throw new NotFoundError('Account balance not found');
-      }
-
-      const currentBalance = new Decimal(accountBalance.balance.toString());
-      if (currentBalance.lessThan(paymentData.amount)) {
-        throw new InsufficientFundsError('Insufficient funds for payment', {
-          available: currentBalance.toString(),
-          requested: paymentData.amount.toString()
-        });
-      }
-
-      const transactionId = generateTransactionId('PMT');
-
-      const entries = [
-        {
-          accountId: account._id,
-          entryType: EntryType.DEBIT,
-          amount: paymentData.amount.toString()
-        }
-      ];
-
-      const description = paymentData.description || 
-        `Payment to ${paymentData.recipientName}`;
-
-      const transaction = new Transaction({
-        transactionId,
-        transactionType: TransactionType.PAYMENT,
-        userId: new mongoose.Types.ObjectId(paymentData.userId),
-        entries,
-        amount: paymentData.amount.toString(),
-        currency: paymentData.currency,
-        fromAccount: account.accountNumber,
-        status: TransactionStatus.PROCESSING,
-        description,
-        reference: paymentData.recipientReference || paymentData.reference || transactionId,
-        metadata: new Map([
-          ...Object.entries(paymentData.metadata || {}),
-          ['recipientName', paymentData.recipientName],
-          ['recipientReference', paymentData.recipientReference]
-        ])
-      });
-
-      await transaction.save({ session });
-
-      const newBalance = currentBalance.minus(paymentData.amount);
-      accountBalance.balance = mongoose.Types.Decimal128.fromString(newBalance.toString());
-      accountBalance.lastUpdated = new Date();
-
-      await accountBalance.save({ session });
-
-      transaction.status = TransactionStatus.COMPLETED;
-      transaction.processedAt = new Date();
-      await transaction.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
-
-      logger.info(`Payment transaction completed: ${transactionId}`, {
-        transactionId,
-        userId: paymentData.userId,
-        accountNumber: paymentData.accountNumber,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        recipient: paymentData.recipientName
-      });
-
-      return this.mapTransactionToDTO(transaction);
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-
-      if (error instanceof mongoose.Error.ValidationError) {
-        throw new BadRequestError('Invalid transaction data', error);
-      }
-
-      throw error;
-    }
-  }
 
   /**
    * Create a fee transaction (system charges)
@@ -527,11 +497,17 @@ import { logger } from '../utils/logger';
       }
 
       const transactionId = generateTransactionId('FEE');
+      const feesAccountId = await this.getSystemAccount('FEES', feeData.currency);
 
       const entries = [
         {
           accountId: account._id,
           entryType: EntryType.DEBIT,
+          amount: feeData.amount.toString()
+        },
+        {
+          accountId: new mongoose.Types.ObjectId(feesAccountId),
+          entryType: EntryType.CREDIT,
           amount: feeData.amount.toString()
         }
       ];

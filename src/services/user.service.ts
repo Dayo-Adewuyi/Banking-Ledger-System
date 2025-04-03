@@ -108,7 +108,6 @@ export class UserService {
       throw new UnauthorizedError('Invalid email or password');
     }
     
-    console.log('user', user);
     if (user?.security?.lockedUntil && user?.security?.lockedUntil > new Date()) {
       const lockTimeRemaining = Math.ceil((user.security.lockedUntil.getTime() - Date.now()) / 60000);
       
@@ -608,15 +607,18 @@ export class UserService {
     );
     
     const signOptions: SignOptions = {
-        expiresIn: parseInt(jwtConfig.accessExpiresIn),
+        expiresIn: tokenExpires,
       issuer: jwtConfig.issuer,
       audience: jwtConfig.audience
     };
     
     const token = jwt.sign(
       payload, 
-      jwtConfig.secret, 
-      signOptions
+      Buffer.from(jwtConfig.secret), 
+      {
+        algorithm: 'HS256', 
+        ...signOptions
+      }
     );
     
     const refreshSignOptions: SignOptions = {
