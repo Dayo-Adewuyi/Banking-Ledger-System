@@ -7,13 +7,7 @@ const ENCRYPTION_KEY = appConfig.encryptionKey
 const ENCRYPTION_IV = appConfig.encryptionIv
 const HASH_SECRET = appConfig.hash
 
-if (Buffer.from(ENCRYPTION_KEY).length !== 32 && process.env.NODE_ENV === 'production') {
-  throw new Error('ENCRYPTION_KEY must be 32 bytes (256 bits) for AES-256 encryption');
-}
 
-if (Buffer.from(ENCRYPTION_IV).length !== 16 && process.env.NODE_ENV === 'production') {
-  throw new Error('ENCRYPTION_IV must be 16 bytes (128 bits) for AES encryption');
-}
 
 /**
  * Generate a secure random token
