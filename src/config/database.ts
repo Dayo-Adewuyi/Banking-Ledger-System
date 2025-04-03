@@ -1,4 +1,3 @@
-// src/config/database.ts
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 
@@ -6,7 +5,6 @@ interface DatabaseConfig {
   uri: string;
   options: mongoose.ConnectOptions;
 }
-
 const dbConfig: DatabaseConfig = {
   uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/banking-ledger',
   options: {
@@ -15,10 +13,7 @@ const dbConfig: DatabaseConfig = {
     
     connectTimeoutMS: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '30000', 10),
     socketTimeoutMS: parseInt(process.env.DB_SOCKET_TIMEOUT_MS || '45000', 10),
-    
-    autoCreate: process.env.NODE_ENV !== 'production',
-    
-    ssl: process.env.NODE_ENV === 'production',
+  
     
     waitQueueTimeoutMS: parseInt(process.env.DB_QUEUE_TIMEOUT_MS || '10000', 10)
   }

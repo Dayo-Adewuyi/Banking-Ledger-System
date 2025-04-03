@@ -64,7 +64,7 @@ export interface IUser extends Document {
   fullName: string;
   createdAt: Date;
   updatedAt: Date;
-
+  token?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -111,6 +111,7 @@ export interface UserResponseDTO {
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
+  token?: string;
 }
 
 export interface UserDetailedResponseDTO extends UserResponseDTO {

@@ -78,8 +78,7 @@ export class UserService {
       
       const verificationToken = await this.createVerificationToken(user._id);
       
-      // TODO: Send verification email with token
-      
+      user.token = verificationToken;
       authLogger.info(`User created: ${user._id}`, { 
         userId: user._id.toString(),
         email: user.email
@@ -128,7 +127,6 @@ export class UserService {
       user.security.lastFailedLogin = new Date();
       
       if (user.security.failedLoginAttempts >= 5) {
-        // Lock for 30 minutes
         const lockUntil = new Date(Date.now() + 30 * 60 * 1000);
         user.security.lockedUntil = lockUntil;
         
@@ -144,7 +142,6 @@ export class UserService {
       throw new UnauthorizedError('Invalid email or password');
     }
     
-    // Check if the account is active
     if (user.status === UserStatus.SUSPENDED) {
       throw new UnauthorizedError('Your account has been suspended. Please contact support.');
     }
@@ -400,7 +397,7 @@ export class UserService {
     }
     
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); 
     
     const hashedToken = crypto
       .createHash('sha256')
@@ -412,8 +409,7 @@ export class UserService {
     
     await user.save();
     
-    // TODO: Send email with reset token
-    // This would typically call an email service to send the reset token to the user
+ 
     
     authLogger.info(`Password reset token generated for user: ${user._id}`, { 
       userId: user._id.toString(),
@@ -723,7 +719,8 @@ export class UserService {
       status: user.status,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      lastLogin: user.lastLogin || undefined
+      lastLogin: user.lastLogin || undefined,
+      token: user.token || undefined,
     };
   }
   
