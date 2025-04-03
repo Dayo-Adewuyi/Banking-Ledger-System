@@ -5,6 +5,1714 @@
       "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
+        {
+            "name": "Create Deposit",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"accountNumber\": \"{{accountNumber}}\",\n  \"amount\": 500.00,\n  \"currency\": \"USD\",\n  \"description\": \"Initial deposit\",\n  \"reference\": \"DEP-REF-12345\",\n  \"metadata\": {\n    \"source\": \"Bank transfer\",\n    \"category\": \"Income\"\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/transactions/deposit",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "transactions", "deposit"]
+              },
+              "description": "Create a deposit transaction to add funds to an account. This immediately increases the account balance. All deposits must be in the same currency as the account."
+            },
+            "response": [
+              {
+                "name": "Deposit Successful",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 500.00,\n  \"currency\": \"USD\",\n  \"description\": \"Initial deposit\",\n  \"reference\": \"DEP-REF-12345\",\n  \"metadata\": {\n    \"source\": \"Bank transfer\",\n    \"category\": \"Income\"\n  }\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/deposit",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "deposit"]
+                  }
+                },
+                "status": "Created",
+                "code": 201,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Deposit completed successfully\",\n  \"data\": {\n    \"id\": \"60e32c5667d0d8992e610d91\",\n    \"transactionId\": \"DEP-M2P7C8O-A1B2\",\n    \"transactionType\": \"DEPOSIT\",\n    \"amount\": \"500.00\",\n    \"currency\": \"USD\",\n    \"toAccount\": \"ACCT-1234-5678-9012\",\n    \"status\": \"COMPLETED\",\n    \"description\": \"Initial deposit\",\n    \"reference\": \"DEP-REF-12345\",\n    \"createdAt\": \"2023-08-15T10:30:00.000Z\",\n    \"processedAt\": \"2023-08-15T10:30:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Account Not Found",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-9999-9999-9999\",\n  \"amount\": 500.00,\n  \"currency\": \"USD\",\n  \"description\": \"Initial deposit\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/deposit",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "deposit"]
+                  }
+                },
+                "status": "Not Found",
+                "code": 404,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_NOT_FOUND\",\n    \"message\": \"Account not found or inactive\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Currency Mismatch",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 500.00,\n  \"currency\": \"EUR\",\n  \"description\": \"Initial deposit\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/deposit",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "deposit"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Currency mismatch. Account is in USD, but deposit is in EUR\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Invalid Amount",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": -100.00,\n  \"currency\": \"USD\",\n  \"description\": \"Invalid deposit\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/deposit",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "deposit"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Amount must be a positive number\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Create Withdrawal",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"accountNumber\": \"{{accountNumber}}\",\n  \"amount\": 200.00,\n  \"currency\": \"USD\",\n  \"description\": \"ATM withdrawal\",\n  \"reference\": \"WDR-REF-12345\",\n  \"metadata\": {\n    \"location\": \"Main Street ATM\",\n    \"category\": \"Cash\"\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/transactions/withdrawal",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "transactions", "withdrawal"]
+              },
+              "description": "Create a withdrawal transaction to remove funds from an account. The account must have sufficient funds for the withdrawal. This endpoint has rate limiting to prevent abuse."
+            },
+            "response": [
+              {
+                "name": "Withdrawal Successful",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 200.00,\n  \"currency\": \"USD\",\n  \"description\": \"ATM withdrawal\",\n  \"reference\": \"WDR-REF-12345\",\n  \"metadata\": {\n    \"location\": \"Main Street ATM\",\n    \"category\": \"Cash\"\n  }\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/withdrawal",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "withdrawal"]
+                  }
+                },
+                "status": "Created",
+                "code": 201,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Withdrawal completed successfully\",\n  \"data\": {\n    \"id\": \"60e32d5667d0d8992e610d92\",\n    \"transactionId\": \"WDR-N3Q8D9P-C3D4\",\n    \"transactionType\": \"WITHDRAWAL\",\n    \"amount\": \"200.00\",\n    \"currency\": \"USD\",\n    \"fromAccount\": \"ACCT-1234-5678-9012\",\n    \"status\": \"COMPLETED\",\n    \"description\": \"ATM withdrawal\",\n    \"reference\": \"WDR-REF-12345\",\n    \"createdAt\": \"2023-08-15T11:15:00.000Z\",\n    \"processedAt\": \"2023-08-15T11:15:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Insufficient Funds",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 2000.00,\n  \"currency\": \"USD\",\n  \"description\": \"Large withdrawal\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/withdrawal",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "withdrawal"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Insufficient funds for this withdrawal\",\n    \"details\": {\n      \"available\": \"1000.00\",\n      \"requested\": \"2000.00\"\n    }\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Rate Limit Exceeded",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\",\n  \"description\": \"ATM withdrawal\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/withdrawal",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "withdrawal"]
+                  }
+                },
+                "status": "Too Many Requests",
+                "code": 429,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-RateLimit-Limit",
+                    "value": "10"
+                  },
+                  {
+                    "key": "X-RateLimit-Remaining",
+                    "value": "0"
+                  },
+                  {
+                    "key": "X-RateLimit-Reset",
+                    "value": "1692103200"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_RATE_LIMIT\",\n    \"message\": \"Too many sensitive operations, please try again later\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Create Transfer",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"fromAccountNumber\": \"{{accountNumber}}\",\n  \"toAccountNumber\": \"{{destinationAccountNumber}}\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"description\": \"Transfer to savings\",\n  \"reference\": \"TRF-REF-12345\",\n  \"metadata\": {\n    \"purpose\": \"Monthly savings\",\n    \"category\": \"Savings\"\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/transactions/transfer",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "transactions", "transfer"]
+              },
+              "description": "Create a transfer transaction between two accounts. Both accounts must be in the same currency, and the source account must have sufficient funds. Users can only transfer from their own accounts. This endpoint has rate limiting to prevent abuse."
+            },
+            "response": [
+              {
+                "name": "Transfer Successful",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"fromAccountNumber\": \"ACCT-1234-5678-9012\",\n  \"toAccountNumber\": \"ACCT-2345-6789-0123\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"description\": \"Transfer to savings\",\n  \"reference\": \"TRF-REF-12345\",\n  \"metadata\": {\n    \"purpose\": \"Monthly savings\",\n    \"category\": \"Savings\"\n  }\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/transfer",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "transfer"]
+                  }
+                },
+                "status": "Created",
+                "code": 201,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Transfer completed successfully\",\n  \"data\": {\n    \"id\": \"60e32e5667d0d8992e610d93\",\n    \"transactionId\": \"TRF-O4R9E0Q-F5G6\",\n    \"transactionType\": \"TRANSFER\",\n    \"amount\": \"300.00\",\n    \"currency\": \"USD\",\n    \"fromAccount\": \"ACCT-1234-5678-9012\",\n    \"toAccount\": \"ACCT-2345-6789-0123\",\n    \"status\": \"COMPLETED\",\n    \"description\": \"Transfer to savings\",\n    \"reference\": \"TRF-REF-12345\",\n    \"createdAt\": \"2023-08-15T12:00:00.000Z\",\n    \"processedAt\": \"2023-08-15T12:00:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Invalid Account Combination",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"fromAccountNumber\": \"ACCT-1234-5678-9012\",\n  \"toAccountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"description\": \"Transfer to same account\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/transfer",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "transfer"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Source and destination accounts cannot be the same\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Currency Mismatch",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"fromAccountNumber\": \"ACCT-1234-5678-9012\",\n  \"toAccountNumber\": \"ACCT-3456-7890-1234\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"description\": \"Transfer to EUR account\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/transfer",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "transfer"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Currency mismatch. Destination account is in EUR, but transfer is in USD\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Not Own Account",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"fromAccountNumber\": \"ACCT-5678-9012-3456\",\n  \"toAccountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"description\": \"Transfer from someone else's account\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/transfer",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "transfer"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"You can only transfer from your own accounts\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Create Payment",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"accountNumber\": \"{{accountNumber}}\",\n  \"recipientName\": \"Electric Company\",\n  \"recipientReference\": \"BILL-1234567\",\n  \"amount\": 150.00,\n  \"currency\": \"USD\",\n  \"description\": \"Monthly electricity bill\",\n  \"reference\": \"PMT-REF-12345\",\n  \"metadata\": {\n    \"billId\": \"EB-202308\",\n    \"category\": \"Utilities\",\n    \"automatic\": false\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/transactions/payment",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "transactions", "payment"]
+              },
+              "description": "Create an external payment transaction. This is used for payments to external entities like bill payments. The account must have sufficient funds. This endpoint has rate limiting to prevent abuse."
+            },
+            "response": [
+              {
+                "name": "Payment Successful",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"recipientName\": \"Electric Company\",\n  \"recipientReference\": \"BILL-1234567\",\n  \"amount\": 150.00,\n  \"currency\": \"USD\",\n  \"description\": \"Monthly electricity bill\",\n  \"reference\": \"PMT-REF-12345\",\n  \"metadata\": {\n    \"billId\": \"EB-202308\",\n    \"category\": \"Utilities\",\n    \"automatic\": false\n  }\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/payment",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "payment"]
+                  }
+                },
+                "status": "Created",
+                "code": 201,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Payment completed successfully\",\n  \"data\": {\n    \"id\": \"60e32f5667d0d8992e610d94\",\n    \"transactionId\": \"PMT-P5S0F1R-H7I8\",\n    \"transactionType\": \"PAYMENT\",\n    \"amount\": \"150.00\",\n    \"currency\": \"USD\",\n    \"fromAccount\": \"ACCT-1234-5678-9012\",\n    \"status\": \"COMPLETED\",\n    \"description\": \"Monthly electricity bill\",\n    \"reference\": \"BILL-1234567\",\n    \"createdAt\": \"2023-08-15T13:30:00.000Z\",\n    \"processedAt\": \"2023-08-15T13:30:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Missing Recipient Information",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountNumber\": \"ACCT-1234-5678-9012\",\n  \"amount\": 150.00,\n  \"currency\": \"USD\",\n  \"description\": \"Monthly electricity bill\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/transactions/payment",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "transactions", "payment"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Recipient name is required\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+        {
+            "name": "Create Account",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"currency\": \"USD\",\n  \"name\": \"Primary Savings\",\n  \"initialBalance\": 1000.00,\n  \"metadata\": {\n    \"purpose\": \"Emergency fund\",\n    \"category\": \"Personal\"\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts"]
+              },
+              "description": "Create a new account for the authenticated user. Account types include SAVINGS, INVESTMENT, CREDIT, and SYSTEM. Supported currencies include USD, EUR, GBP, JPY, CAD, CHF, AUD, CNY, INR, and NGN."
+            },
+            "response": [
+              {
+                "name": "Account Created Successfully",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"currency\": \"USD\",\n  \"name\": \"Primary Savings\",\n  \"initialBalance\": 1000.00,\n  \"metadata\": {\n    \"purpose\": \"Emergency fund\",\n    \"category\": \"Personal\"\n  }\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts"]
+                  }
+                },
+                "status": "Created",
+                "code": 201,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Account created successfully\",\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"accountNumber\": \"ACCT-1234-5678-9012\",\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"USD\",\n    \"balance\": \"1000.00\",\n    \"isActive\": true,\n    \"metadata\": {\n      \"name\": \"Primary Savings\",\n      \"purpose\": \"Emergency fund\",\n      \"category\": \"Personal\"\n    },\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-01T10:30:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Validation Error",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountType\": \"INVALID_TYPE\",\n  \"currency\": \"USD\",\n  \"name\": \"Primary Savings\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_VALIDATION\",\n    \"message\": \"Validation Error\",\n    \"details\": [\n      {\n        \"field\": \"accountType\",\n        \"message\": \"Invalid account type\",\n        \"value\": \"INVALID_TYPE\"\n      }\n    ]\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Unauthorized",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"currency\": \"USD\",\n  \"name\": \"Primary Savings\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts"]
+                  }
+                },
+                "status": "Unauthorized",
+                "code": 401,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Authentication required\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get User Accounts",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts?page=1&limit=10&accountType=SAVINGS&currency=USD&isActive=true&sortBy=createdAt&sortDirection=desc",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts"],
+                "query": [
+                  {
+                    "key": "page",
+                    "value": "1",
+                    "description": "Page number for pagination"
+                  },
+                  {
+                    "key": "limit",
+                    "value": "10",
+                    "description": "Number of items per page (max 100)"
+                  },
+                  {
+                    "key": "accountType",
+                    "value": "SAVINGS",
+                    "description": "Filter by account type (SAVINGS, INVESTMENT, CREDIT, SYSTEM)"
+                  },
+                  {
+                    "key": "currency",
+                    "value": "USD",
+                    "description": "Filter by currency code"
+                  },
+                  {
+                    "key": "isActive",
+                    "value": "true",
+                    "description": "Filter by active status"
+                  },
+                  {
+                    "key": "sortBy",
+                    "value": "createdAt",
+                    "description": "Field to sort by"
+                  },
+                  {
+                    "key": "sortDirection",
+                    "value": "desc",
+                    "description": "Sort direction (asc or desc)"
+                  },
+                  {
+                    "key": "bypassCache",
+                    "value": "false",
+                    "description": "Set to true to bypass response caching",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Get all accounts for the authenticated user with optional filtering and pagination. Results are cached for 60 seconds by default."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts?page=1&limit=10",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "1"
+                      },
+                      {
+                        "key": "limit",
+                        "value": "10"
+                      }
+                    ]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Cache",
+                    "value": "MISS"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"60d21b4667d0d8992e610c85\",\n      \"accountNumber\": \"ACCT-1234-5678-9012\",\n      \"accountType\": \"SAVINGS\",\n      \"currency\": \"USD\",\n      \"balance\": \"1000.00\",\n      \"isActive\": true,\n      \"metadata\": {\n        \"name\": \"Primary Savings\"\n      },\n      \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n      \"updatedAt\": \"2023-08-01T10:30:00.000Z\"\n    },\n    {\n      \"id\": \"60d21b4667d0d8992e610c86\",\n      \"accountNumber\": \"ACCT-2345-6789-0123\",\n      \"accountType\": \"INVESTMENT\",\n      \"currency\": \"EUR\",\n      \"balance\": \"5000.00\",\n      \"isActive\": true,\n      \"metadata\": {\n        \"name\": \"Investment Account\"\n      },\n      \"createdAt\": \"2023-07-15T14:20:00.000Z\",\n      \"updatedAt\": \"2023-07-15T14:20:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 2,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 1\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "No Accounts Found",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts?accountType=CREDIT",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts"],
+                    "query": [
+                      {
+                        "key": "accountType",
+                        "value": "CREDIT"
+                      }
+                    ]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": [],\n  \"pagination\": {\n    \"total\": 0,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 0\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Unauthorized",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts"]
+                  }
+                },
+                "status": "Unauthorized",
+                "code": 401,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_UNAUTHORIZED\",\n    \"message\": \"Authentication required\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get Account by ID",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}"]
+              },
+              "description": "Get detailed information about a specific account by its MongoDB ID. Users can only access their own accounts unless they have admin role."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"accountNumber\": \"ACCT-1234-5678-9012\",\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"USD\",\n    \"balance\": \"1000.00\",\n    \"isActive\": true,\n    \"metadata\": {\n      \"name\": \"Primary Savings\",\n      \"purpose\": \"Emergency fund\",\n      \"category\": \"Personal\"\n    },\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-01T10:30:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Account Not Found",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c99",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c99"]
+                  }
+                },
+                "status": "Not Found",
+                "code": 404,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_NOT_FOUND\",\n    \"message\": \"Account not found\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Permission Denied",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c87",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c87"]
+                  }
+                },
+                "status": "Forbidden",
+                "code": 403,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_FORBIDDEN\",\n    \"message\": \"You do not have permission to access this account\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get Account by Number",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/number/{{accountNumber}}",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "number", "{{accountNumber}}"]
+              },
+              "description": "Get detailed information about a specific account by its account number (format: ACCT-XXXX-XXXX-XXXX). Users can only access their own accounts unless they have admin role."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/number/ACCT-1234-5678-9012",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "number", "ACCT-1234-5678-9012"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"accountNumber\": \"ACCT-1234-5678-9012\",\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"USD\",\n    \"balance\": \"1000.00\",\n    \"isActive\": true,\n    \"metadata\": {\n      \"name\": \"Primary Savings\",\n      \"purpose\": \"Emergency fund\",\n      \"category\": \"Personal\"\n    },\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-01T10:30:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Account Not Found",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/number/ACCT-9999-9999-9999",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "number", "ACCT-9999-9999-9999"]
+                  }
+                },
+                "status": "Not Found",
+                "code": 404,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_NOT_FOUND\",\n    \"message\": \"Account not found\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Update Account",
+            "request": {
+              "method": "PATCH",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Updated Account Name\",\n  \"accountType\": \"INVESTMENT\",\n  \"metadata\": {\n    \"purpose\": \"Long-term investments\",\n    \"category\": \"Retirement\",\n    \"note\": \"Tax-advantaged account\"\n  }\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}"]
+              },
+              "description": "Update an existing account's details. This cannot be used to update the balance directly. Users can only update their own accounts unless they have admin role."
+            },
+            "response": [
+              {
+                "name": "Account Updated Successfully",
+                "originalRequest": {
+                  "method": "PATCH",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"name\": \"Updated Account Name\",\n  \"accountType\": \"INVESTMENT\",\n  \"metadata\": {\n    \"purpose\": \"Long-term investments\",\n    \"category\": \"Retirement\",\n    \"note\": \"Tax-advantaged account\"\n  }\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Account updated successfully\",\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"accountNumber\": \"ACCT-1234-5678-9012\",\n    \"accountType\": \"INVESTMENT\",\n    \"currency\": \"USD\",\n    \"balance\": \"1000.00\",\n    \"isActive\": true,\n    \"metadata\": {\n      \"name\": \"Updated Account Name\",\n      \"purpose\": \"Long-term investments\",\n      \"category\": \"Retirement\",\n      \"note\": \"Tax-advantaged account\"\n    },\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-01T11:45:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Permission Denied",
+                "originalRequest": {
+                  "method": "PATCH",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"name\": \"Updated Account Name\",\n  \"accountType\": \"INVESTMENT\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c87",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c87"]
+                  }
+                },
+                "status": "Forbidden",
+                "code": 403,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_FORBIDDEN\",\n    \"message\": \"You do not have permission to update this account\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get Account Balance",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/balance",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}", "balance"]
+              },
+              "description": "Get the current balance for a specific account. Users can only access their own accounts unless they have admin role."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/balance",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "balance"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accountId\": \"60d21b4667d0d8992e610c85\",\n    \"accountNumber\": \"ACCT-1234-5678-9012\",\n    \"balance\": \"1250.75\",\n    \"currency\": \"USD\",\n    \"availableBalance\": \"1250.75\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Account Not Found",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c99/balance",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c99", "balance"]
+                  }
+                },
+                "status": "Not Found",
+                "code": 404,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_NOT_FOUND\",\n    \"message\": \"Account not found\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get Account Transactions",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions?page=1&limit=10&transactionType=DEPOSIT&status=COMPLETED&fromDate=2023-01-01&toDate=2023-12-31&minAmount=10&maxAmount=1000&sortBy=createdAt&sortDirection=desc",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}", "transactions"],
+                "query": [
+                  {
+                    "key": "page",
+                    "value": "1",
+                    "description": "Page number for pagination"
+                  },
+                  {
+                    "key": "limit",
+                    "value": "10",
+                    "description": "Number of items per page (max 100)"
+                  },
+                  {
+                    "key": "transactionType",
+                    "value": "DEPOSIT",
+                    "description": "Filter by transaction type (DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT, FEE, INTEREST, ADJUSTMENT, REVERSAL, REFUND)"
+                  },
+                  {
+                    "key": "status",
+                    "value": "COMPLETED",
+                    "description": "Filter by transaction status (PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED)"
+                  },
+                  {
+                    "key": "fromDate",
+                    "value": "2023-01-01",
+                    "description": "Start date for transaction filtering (YYYY-MM-DD)"
+                  },
+                  {
+                    "key": "toDate",
+                    "value": "2023-12-31",
+                    "description": "End date for transaction filtering (YYYY-MM-DD)"
+                  },
+                  {
+                    "key": "minAmount",
+                    "value": "10",
+                    "description": "Minimum transaction amount"
+                  },
+                  {
+                    "key": "maxAmount",
+                    "value": "1000",
+                    "description": "Maximum transaction amount"
+                  },
+                  {
+                    "key": "sortBy",
+                    "value": "createdAt",
+                    "description": "Field to sort by"
+                  },
+                  {
+                    "key": "sortDirection",
+                    "value": "desc",
+                    "description": "Sort direction (asc or desc)"
+                  }
+                ]
+              },
+              "description": "Get transaction history for a specific account with comprehensive filtering options. Users can only access their own accounts unless they have admin role."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/transactions?page=1&limit=10",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "transactions"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "1"
+                      },
+                      {
+                        "key": "limit",
+                        "value": "10"
+                      }
+                    ]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"60e32c5667d0d8992e610d91\",\n      \"transactionId\": \"DEP-M2P7C8O-A1B2\",\n      \"transactionType\": \"DEPOSIT\",\n      \"amount\": \"500.00\",\n      \"currency\": \"USD\",\n      \"toAccount\": \"ACCT-1234-5678-9012\",\n      \"status\": \"COMPLETED\",\n      \"description\": \"Initial deposit\",\n      \"reference\": \"DEP-M2P7C8O-A1B2\",\n      \"createdAt\": \"2023-08-01T11:30:00.000Z\",\n      \"processedAt\": \"2023-08-01T11:30:00.000Z\"\n    },\n    {\n      \"id\": \"60e32d5667d0d8992e610d92\",\n      \"transactionId\": \"WDR-N3Q8D9P-C3D4\",\n      \"transactionType\": \"WITHDRAWAL\",\n      \"amount\": \"200.00\",\n      \"currency\": \"USD\",\n      \"fromAccount\": \"ACCT-1234-5678-9012\",\n      \"status\": \"COMPLETED\",\n      \"description\": \"ATM withdrawal\",\n      \"reference\": \"WDR-N3Q8D9P-C3D4\",\n      \"createdAt\": \"2023-08-02T15:45:00.000Z\",\n      \"processedAt\": \"2023-08-02T15:45:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 2,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 1\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "No Transactions Found",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/transactions?transactionType=REFUND",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "transactions"],
+                    "query": [
+                      {
+                        "key": "transactionType",
+                        "value": "REFUND"
+                      }
+                    ]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": [],\n  \"pagination\": {\n    \"total\": 0,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 0\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get Account Statistics",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/stats?startDate=2023-01-01&endDate=2023-12-31",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}", "stats"],
+                "query": [
+                  {
+                    "key": "startDate",
+                    "value": "2023-01-01",
+                    "description": "Start date for statistics calculation (YYYY-MM-DD)"
+                  },
+                  {
+                    "key": "endDate",
+                    "value": "2023-12-31",
+                    "description": "End date for statistics calculation (YYYY-MM-DD)"
+                  }
+                ]
+              },
+              "description": "Get transaction statistics for a specific account. This includes transaction volumes, categorized by transaction type, daily trends, and net flow analysis. Results are cached for 5 minutes."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/stats",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "stats"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Cache",
+                    "value": "MISS"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": {\n    \"netFlow\": {\n      \"USD\": \"1050.25\"\n    },\n    \"statsByType\": [\n      {\n        \"_id\": {\n          \"transactionType\": \"DEPOSIT\",\n          \"direction\": \"INCOMING\",\n          \"currency\": \"USD\"\n        },\n        \"count\": 5,\n        \"totalAmount\": \"1500.00\",\n        \"avgAmount\": \"300.00\"\n      },\n      {\n        \"_id\": {\n          \"transactionType\": \"WITHDRAWAL\",\n          \"direction\": \"OUTGOING\",\n          \"currency\": \"USD\"\n        },\n        \"count\": 2,\n        \"totalAmount\": \"450.00\",\n        \"avgAmount\": \"225.00\"\n      }\n    ],\n    \"dailyTrend\": [\n      {\n        \"_id\": {\n          \"date\": \"2023-08-01\",\n          \"direction\": \"INCOMING\"\n        },\n        \"count\": 2,\n        \"totalAmount\": \"700.00\"\n      },\n      {\n        \"_id\": {\n          \"date\": \"2023-08-02\",\n          \"direction\": \"OUTGOING\"\n        },\n        \"count\": 1,\n        \"totalAmount\": \"200.00\"\n      }\n    ]\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Close Account",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"reason\": \"No longer needed\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/close",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}", "close"]
+              },
+              "description": "Close an account. The account must have a zero balance to be closed. The account status will be changed to inactive, but the account record is preserved for historical purposes."
+            },
+            "response": [
+              {
+                "name": "Account Closed Successfully",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"reason\": \"No longer needed\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/close",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "close"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Account closed successfully\"\n}",
+                "cookie": []
+              },
+              {
+                "name": "Non-Zero Balance",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"reason\": \"Closing account\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/close",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "close"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Account cannot be closed with a positive balance. Please transfer or withdraw all funds first.\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Reopen Account (Admin Only)",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminAccessToken}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"reason\": \"Customer request to reactivate\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/reopen",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "{{accountId}}", "reopen"]
+              },
+              "description": "Reopen a previously closed account. This operation is restricted to administrators only."
+            },
+            "response": [
+              {
+                "name": "Account Reopened Successfully",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{adminAccessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"reason\": \"Customer request to reactivate\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/reopen",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "reopen"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"message\": \"Account reopened successfully\",\n  \"data\": {\n    \"id\": \"60d21b4667d0d8992e610c85\",\n    \"accountNumber\": \"ACCT-1234-5678-9012\",\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"USD\",\n    \"balance\": \"0.00\",\n    \"isActive\": true,\n    \"metadata\": {\n      \"name\": \"Primary Savings\",\n      \"reopenedAt\": \"2023-08-15T14:30:00.000Z\",\n      \"reopenedBy\": \"60d21b4667d0d8992e610c90\",\n      \"reopenReason\": \"Customer request to reactivate\"\n    },\n    \"createdAt\": \"2023-08-01T10:30:00.000Z\",\n    \"updatedAt\": \"2023-08-15T14:30:00.000Z\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Forbidden - Not Admin",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"reason\": \"Customer request to reactivate\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/reopen",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "reopen"]
+                  }
+                },
+                "status": "Forbidden",
+                "code": 403,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_FORBIDDEN\",\n    \"message\": \"Only administrators can reopen accounts\"\n  }\n}",
+                "cookie": []
+              },
+              {
+                "name": "Account Already Active",
+                "originalRequest": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{adminAccessToken}}"
+                    }
+                  ],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"reason\": \"Customer request to reactivate\"\n}"
+                  },
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/60d21b4667d0d8992e610c85/reopen",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "60d21b4667d0d8992e610c85", "reopen"]
+                  }
+                },
+                "status": "Bad Request",
+                "code": 400,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERR_BAD_REQUEST\",\n    \"message\": \"Account is already active\"\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
+          {
+            "name": "Get Account Summary",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{accessToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/v1/accounts/summary?bypassCache=false",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "v1", "accounts", "summary"],
+                "query": [
+                  {
+                    "key": "bypassCache",
+                    "value": "false",
+                    "description": "Set to true to bypass response caching"
+                  }
+                ]
+              },
+              "description": "Get a summary of all user accounts including total balances by currency, count by account type, and active accounts. Results are cached for 60 seconds by default."
+            },
+            "response": [
+              {
+                "name": "Successful Response",
+                "originalRequest": {
+                  "method": "GET",
+                  "header": [
+                    {
+                      "key": "Authorization",
+                      "value": "Bearer {{accessToken}}"
+                    }
+                  ],
+                  "url": {
+                    "raw": "{{baseUrl}}/api/v1/accounts/summary",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "v1", "accounts", "summary"]
+                  }
+                },
+                "status": "OK",
+                "code": 200,
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Cache",
+                    "value": "MISS"
+                  }
+                ],
+                "body": "{\n  \"success\": true,\n  \"data\": {\n    \"summary\": {\n      \"totalAccounts\": 3,\n      \"activeAccounts\": 2,\n      \"totalBalance\": {\n        \"USD\": \"1250.75\",\n        \"EUR\": \"5000.00\"\n      },\n      \"accountsByType\": {\n        \"SAVINGS\": 1,\n        \"INVESTMENT\": 1,\n        \"CREDIT\": 1\n      },\n      \"accountsByCurrency\": {\n        \"USD\": 2,\n        \"EUR\": 1\n      }\n    },\n    \"accounts\": [\n      {\n        \"id\": \"60d21b4667d0d8992e610c85\",\n        \"accountNumber\": \"ACCT-1234-5678-9012\",\n        \"accountType\": \"SAVINGS\",\n        \"currency\": \"USD\",\n        \"balance\": \"1250.75\",\n        \"isActive\": true,\n        \"name\": \"Primary Savings\"\n      },\n      {\n        \"id\": \"60d21b4667d0d8992e610c86\",\n        \"accountNumber\": \"ACCT-2345-6789-0123\",\n        \"accountType\": \"INVESTMENT\",\n        \"currency\": \"EUR\",\n        \"balance\": \"5000.00\",\n        \"isActive\": true,\n        \"name\": \"Investment Account\"\n      },\n      {\n        \"id\": \"60d21b4667d0d8992e610c87\",\n        \"accountNumber\": \"ACCT-3456-7890-1234\",\n        \"accountType\": \"CREDIT\",\n        \"currency\": \"USD\",\n        \"balance\": \"0.00\",\n        \"isActive\": false,\n        \"name\": \"Closed Credit Account\"\n      }\n    ]\n  }\n}",
+                "cookie": []
+              }
+            ]
+          },
       {
         "name": "Register User",
         "request": {
@@ -1200,5 +2908,79 @@
           }
         ]
       }
-    ]
+    ],
+  
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "API base URL - change as needed for your environment"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token received from login response for regular user"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token for an admin user"
+    },
+    {
+      "key": "accountId",
+      "value": "",
+      "type": "string",
+      "description": "MongoDB ID of an account"
+    },
+    {
+      "key": "accountNumber",
+      "value": "",
+      "type": "string",
+      "description": "Account number (format: ACCT-XXXX-XXXX-XXXX)"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request Script",
+          "// You can use this to set up environment variables or other test data"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Test Script for Create Account",
+          "if (pm.info.requestName === \"Create Account\" && pm.response.code === 201) {",
+          "    const responseJson = pm.response.json();",
+          "    if (responseJson.success && responseJson.data) {",
+          "        pm.environment.set(\"accountId\", responseJson.data.id);",
+          "        pm.environment.set(\"accountNumber\", responseJson.data.accountNumber);",
+          "        console.log(\"Account ID and Account Number saved to environment variables.\");",
+          "    }",
+          "}",
+          "",
+          "// Test Script for Get Account by ID",
+          "if (pm.info.requestName === \"Get Account by ID\" && pm.response.code === 200) {",
+          "    const responseJson = pm.response.json();",
+          "    if (responseJson.success && responseJson.data) {",
+          "        pm.environment.set(\"accountNumber\", responseJson.data.accountNumber);",
+          "        console.log(\"Account Number updated in environment variables.\");",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+  
+ 
+
   }

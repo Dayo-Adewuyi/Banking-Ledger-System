@@ -98,6 +98,7 @@ export class AuthController {
         data: authResponse
       });
     } catch (error) {
+      console.trace(error);
       if (error instanceof UnauthorizedError) {
         authLogger.warn(`Login failed: ${error.message}`, {
           email: req.body.email,

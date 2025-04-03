@@ -52,7 +52,16 @@ const UserSchema: Schema = new Schema(
         type: Map,
         of: Schema.Types.Mixed,
         default: {}
-      }
+      },
+      security: {
+        type: Map,
+        of: Schema.Types.Mixed,
+        default: {}
+      },
+      permissions: {
+        type: [String],
+        default: []
+      },
     },
     {
       timestamps: true

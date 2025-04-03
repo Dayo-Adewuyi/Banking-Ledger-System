@@ -108,7 +108,8 @@ export class UserService {
       throw new UnauthorizedError('Invalid email or password');
     }
     
-    if (user.security.lockedUntil && user.security.lockedUntil > new Date()) {
+    console.log('user', user);
+    if (user?.security?.lockedUntil && user?.security?.lockedUntil > new Date()) {
       const lockTimeRemaining = Math.ceil((user.security.lockedUntil.getTime() - Date.now()) / 60000);
       
       authLogger.warn(`Login attempted on locked account`, { 
@@ -126,14 +127,14 @@ export class UserService {
       user.security.failedLoginAttempts = (user.security.failedLoginAttempts || 0) + 1;
       user.security.lastFailedLogin = new Date();
       
-      if (user.security.failedLoginAttempts >= 5) {
+      if (user?.security?.failedLoginAttempts >= 5) {
         const lockUntil = new Date(Date.now() + 30 * 60 * 1000);
         user.security.lockedUntil = lockUntil;
         
         authLogger.warn(`Account locked due to too many failed login attempts`, {
           userId: user._id.toString(),
           email: user.email,
-          failedAttempts: user.security.failedLoginAttempts,
+          failedAttempts: user?.security?.failedLoginAttempts,
           lockedUntil: lockUntil
         });
       }

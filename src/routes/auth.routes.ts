@@ -17,9 +17,6 @@ const router = Router();
  * password management, and related operations
  */
 
-
-const applyLoginRateLimiting = securityMiddleware.loginRateLimiter;
-
 /**
  * @route POST /api/v1/auth/register
  * @desc Register a new user
@@ -38,7 +35,6 @@ router.post(
  */
 router.post(
   '/login',
-  applyLoginRateLimiting,
   validationMiddleware.authValidation.login,
   AuthController.login
 );
