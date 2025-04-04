@@ -53,7 +53,7 @@ export const validateAmount = (value: any): boolean => {
  * Validate account number format
  */
 export const validateAccountNumber = (value: string): boolean => {
-  const accountNumberRegex = /^ACCT-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-\d{4}$/;
+  const accountNumberRegex = /^ACCT-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}$/;
   return accountNumberRegex.test(value);
 };
 

@@ -14,6 +14,11 @@
             "date": 1743662851942,
             "name": "/Users/enyata/ledger/logs/combined-2025-04-03.log",
             "hash": "c89d5f182b35e1368bba6a10db77dd99eb2e7da89614d5de0568aa11d4759349"
+        },
+        {
+            "date": 1743785084131,
+            "name": "/Users/enyata/ledger/logs/combined-2025-04-04.log",
+            "hash": "00a9dc35db8079275391977c7c605ee0be846efd79de6b0559cf3dcb95250170"
         }
     ],
     "hashType": "sha256"
